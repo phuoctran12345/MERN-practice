@@ -1,0 +1,11 @@
+/* You can add global app-specific styles here */
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 60px; /* Adjust based on header height */
+}

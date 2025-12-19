@@ -1,129 +1,68 @@
-# E-commerce React Application
-
-This is a basic e-commerce application built with React, React Router, and Redux Toolkit. It uses `json-server` to simulate a backend API based on the `db.json` file.
-
-## Project Structure
-
-The project follows the structure provided:
-
-\`\`\`
-assignment/
-├── db.json
-├── package.json
-├── package-lock.json
-├── README.md
-├── public/
-│   └── index.html
-│   └── ... (favicon, etc.)
-└── src/
-    ├── App.js
-    ├── App.css
-    ├── index.js
-    ├── index.css
-    ├── components/
-    │   ├── layout.jsx
-    │   ├── Footer.jsx
-    │   ├── Header.jsx
-    │   ├── AboutUs.jsx
-    │   ├── Services.jsx
-    │   ├── products/
-    │   │   ├── ProductList.jsx
-    │   │   ├── ProductDetail.jsx
-    │   │   ├── ProductForm.jsx
-    │   ├── cart/
-    │   │   ├── CartPage.jsx
-    │   ├── checkout/
-    │   │   ├── CheckoutPage.jsx
-    │   ├── orders/
-    │   │   ├── OrderHistory.jsx
-    │   │   ├── OrderList.jsx
-    │   ├── login/
-    │   │   ├── LoginPage.jsx
-    │   ├── register/
-    │   │   ├── RegisterPage.jsx
-    │   ├── users/
-    │   │   ├── UserManagement.jsx
-    │   ├── payment/
-    │   │   ├── PaymentHistory.jsx
-    │   └── 404.jsx
-    ├── redux/
-    │   ├── store.js
-    │   └── slices/
-    │       ├── productSlice.js
-    │       ├── userSlice.js
-    │       ├── cartSlice.js
-    │       ├── orderSlice.js
-    │       ├── paymentSlice.js
-    └── service/
-        └── api.js
-\`\`\`
-
-## Getting Started
-
-### 1. Clone the repository (if applicable)
-
-### 2. Install Dependencies
-
-Navigate to the project directory and install the required packages:
-
-\`\`\`bash
-npm install
-# or
-yarn install
-\`\`\`
-
-### 3. Start the JSON Server
-
-In a separate terminal, start the mock API server using `db.json`:
-
-\`\`\`bash
-npm run server
-# or
-yarn server
-\`\`\`
-The server will run on `http://localhost:3001`.
-
-### 4. Start the React Application
-
-In another terminal, start the React development server:
-
-\`\`\`bash
-npm start
-# or
-yarn start
-\`\`\`
-The application will open in your browser at `http://localhost:3000`.
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 
 In the project directory, you can run:
 
-*   `npm start`: Runs the app in development mode.
-*   `npm run build`: Builds the app for production to the `build` folder.
-*   `npm test`: Launches the test runner.
-*   `npm run eject`: Removes the single build dependency from your project.
-*   `npm run server`: Starts the JSON Server using `db.json`.
+### `yarn start`
 
-## Features Implemented (Basic Structure)
+Runs the app in the development mode.<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-*   **Authentication:** Login and Register pages.
-*   **Product Management:** List, Detail, and (Admin) Form for products.
-*   **Shopping Cart:** Add, view, edit, remove items.
-*   **Checkout:** Shipping details and payment methods (including VietQR placeholder).
-*   **Order History:** User's past orders.
-*   **Admin Panels:** User Management, All Payment History.
-*   **Informational Pages:** About Us, Services.
-*   **Global Layout:** Header and Footer.
-*   **State Management:** Redux Toolkit for centralized state.
-*   **API Integration:** Axios for fetching and manipulating data from `json-server`.
+The page will reload if you make edits.<br />
+You will also see any lint errors in the console.
 
-## Styling
+### `yarn test`
 
-This project uses basic CSS and inline styles for simplicity. For a production application, consider a CSS framework like Tailwind CSS or a component library.
+Launches the test runner in the interactive watch mode.<br />
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-## Important Notes
+### `yarn build`
 
-*   **Authentication:** The login/register functionality is currently client-side and uses mock data from `db.json`. For a real application, you would integrate with a secure backend authentication system.
-*   **Payment:** The VietQR and other payment methods on the checkout page are placeholders. Real payment integration requires secure API calls to payment gateways.
-*   **Admin Functionality:** Admin pages (`ProductForm`, `UserManagement`, `PaymentHistory`) are structured but require full backend integration and authorization logic.
-# MERN-practice
+Builds the app for production to the `build` folder.<br />
+It correctly bundles React in production mode and optimizes the build for the best performance.
+
+The build is minified and the filenames include the hashes.<br />
+Your app is ready to be deployed!
+
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `yarn eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).
+
+### Code Splitting
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+
+### Analyzing the Bundle Size
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+
+### Making a Progressive Web App
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+
+### Advanced Configuration
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+
+### Deployment
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+
+### `yarn build` fails to minify
+
+This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify

@@ -1,0 +1,11 @@
+.receptionist-dashboard {
+  padding: 24px;
+}
+
+.receptionist-dashboard h1 {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary, #262626);
+}
+

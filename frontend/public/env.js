@@ -1,0 +1,8 @@
+// Define process.env for browser
+window.process = {
+  env: {
+    NODE_ENV: 'development',
+    REACT_APP_API_URL: 'http://localhost:5000'
+  }
+};
+

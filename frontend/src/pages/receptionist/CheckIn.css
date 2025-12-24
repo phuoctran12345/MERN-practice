@@ -1,0 +1,11 @@
+.checkin {
+  padding: 24px;
+}
+
+.checkin h1 {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary, #262626);
+}
+

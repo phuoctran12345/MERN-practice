@@ -1,13 +1,17 @@
 import React from 'react';
-
 import './Header.css';
 
-const Header = props => {
+interface HeaderProps {
+  title?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ title = 'MERN Shop' }) => {
   return (
     <header className="header">
-      <h1>MERN Shop</h1>
+      <h1>{title}</h1>
     </header>
   );
 };
 
 export default Header;
+

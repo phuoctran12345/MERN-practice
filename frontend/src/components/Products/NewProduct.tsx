@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
-
 import Input from '../Input/Input';
 import Button from '../Button/Button';
 import './NewProduct.css';
 
-const NewProduct = props => {
-  const [enteredTitle, setEnteredTitle] = useState('');
-  const [enteredPrice, setEnteredPrice] = useState('');
+interface NewProductProps {
+  onAddProduct: (productName: string, productPrice: string) => void;
+}
 
-  const titleChangeHandler = event => {
+const NewProduct: React.FC<NewProductProps> = ({ onAddProduct }) => {
+  const [enteredTitle, setEnteredTitle] = useState<string>('');
+  const [enteredPrice, setEnteredPrice] = useState<string>('');
+
+  const titleChangeHandler = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setEnteredTitle(event.target.value);
   };
 
-  const priceChangeHandler = event => {
+  const priceChangeHandler = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setEnteredPrice(event.target.value);
   };
 
-  const submitProductHandler = event => {
+  const submitProductHandler = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    props.onAddProduct(enteredTitle, enteredPrice);
+    onAddProduct(enteredTitle, enteredPrice);
+    setEnteredTitle('');
+    setEnteredPrice('');
   };
 
   return (
@@ -47,3 +52,4 @@ const NewProduct = props => {
 };
 
 export default NewProduct;
+

@@ -1,6 +1,6 @@
 dự án của tui sài typesript
 
-
+neo brutalims bây chừ ở trang dashboard hãy cho tui 
 
 --------------------------------------------------------------------------------
 📜 Quy định Triển khai Dự án Smart Hotel (rule.md)

@@ -1,95 +1,149 @@
-import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
-import './App.css';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
+import Layout from "./layouts/Layout";
+import AuthLayout from "./layouts/AuthLayout";
+import ScrollToTop from "./components/ScrollToTop";
+import { Toaster } from "./components/ui/toaster";
+import Register from "./pages/Register";
+import SignIn from "./pages/SignIn";
+import AddHotel from "./pages/AddHotel";
+import useAppContext from "./hooks/useAppContext";
+import MyHotels from "./pages/MyHotels";
+import EditHotel from "./pages/EditHotel";
+import Search from "./pages/Search";
+import Detail from "./pages/Detail";
+import Booking from "./pages/Booking";
+import MyBookings from "./pages/MyBookings";
+import Home from "./pages/Home";
+import ApiDocs from "./pages/ApiDocs";
+import ApiStatus from "./pages/ApiStatus";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
-// Layout Components
-import DashboardLayout from './components/layout/DashboardLayout';
-
-// Customer Pages
-import CustomerHome from './pages/customer/Home';
-import SearchRooms from './pages/customer/SearchRooms';
-import Booking from './pages/customer/Booking';
-import MyBookings from './pages/customer/MyBookings';
-import Payment from './pages/customer/Payment';
-import ServiceRequest from './pages/customer/ServiceRequest';
-
-// Receptionist Pages
-import ReceptionistDashboard from './pages/receptionist/Dashboard';
-import CheckIn from './pages/receptionist/CheckIn';
-import CheckOut from './pages/receptionist/CheckOut';
-
-// Manager Pages
-import ManagerDashboard from './pages/manager/Dashboard';
-import ManageRooms from './pages/manager/ManageRooms';
-
-// Types
-import { UserRole } from './types/common.types';
-
-// Landing Page
-import LandingPage from './pages/guest/LandingPage';
-
-// Auth Pages (TODO: Tạo sau)
-// import Login from './pages/auth/Login';
-// import Register from './pages/auth/Register';
-
-const App: React.FC = () => {
-  // TODO: Lấy user role từ context/store
-  const userRole: UserRole = 'customer'; // 'customer' | 'receptionist' | 'manager'
-
+const App = () => {
+  const { isLoggedIn } = useAppContext();
   return (
     <Router>
-      <Switch>
-        {/* Public Routes */}
-        <Route exact path="/" component={LandingPage} />
-        {/* <Route path="/login" component={Login} /> */}
-        {/* <Route path="/register" component={Register} /> */}
+      <ScrollToTop />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Home />
+            </Layout>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <Layout>
+              <Search />
+            </Layout>
+          }
+        />
+        <Route
+          path="/detail/:hotelId"
+          element={
+            <Layout>
+              <Detail />
+            </Layout>
+          }
+        />
+        <Route
+          path="/api-docs"
+          element={
+            <Layout>
+              <ApiDocs />
+            </Layout>
+          }
+        />
+        <Route
+          path="/api-status"
+          element={
+            <Layout>
+              <ApiStatus />
+            </Layout>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <Layout>
+              <AnalyticsDashboard />
+            </Layout>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <AuthLayout>
+              <Register />
+            </AuthLayout>
+          }
+        />
+        <Route
+          path="/sign-in"
+          element={
+            <AuthLayout>
+              <SignIn />
+            </AuthLayout>
+          }
+        />
 
+        {isLoggedIn && (
+          <>
+            <Route
+              path="/hotel/:hotelId/booking"
+              element={
+                <Layout>
+                  <Booking />
+                </Layout>
+              }
+            />
 
-
-        {/* Customer Routes */}
-        <Route path="/customer">
-          <DashboardLayout userRole="customer">
-            <Switch>
-              <Route path="/customer/home" component={CustomerHome} />
-              <Route path="/customer/search" component={SearchRooms} />
-              <Route path="/customer/booking" component={Booking} />
-              <Route path="/customer/bookings" component={MyBookings} />
-              <Route path="/customer/payment" component={Payment} />
-              <Route path="/customer/services" component={ServiceRequest} />
-              <Redirect from="/customer" to="/customer/home" />
-            </Switch>
-          </DashboardLayout>
-        </Route>
-
-        {/* Receptionist Routes */}
-        <Route path="/receptionist">
-          <DashboardLayout userRole="receptionist">
-            <Switch>
-              <Route path="/receptionist/dashboard" component={ReceptionistDashboard} />
-              <Route path="/receptionist/checkin" component={CheckIn} />
-              <Route path="/receptionist/checkout" component={CheckOut} />
-              <Redirect from="/receptionist" to="/receptionist/dashboard" />
-            </Switch>
-          </DashboardLayout>
-        </Route>
-
-        {/* Manager Routes */}
-        <Route path="/manager">
-          <DashboardLayout userRole="manager">
-            <Switch>
-              <Route path="/manager/dashboard" component={ManagerDashboard} />
-              <Route path="/manager/rooms" component={ManageRooms} />
-              <Redirect from="/manager" to="/manager/dashboard" />
-            </Switch>
-          </DashboardLayout>
-        </Route>
-
-        {/* Default redirect - Nếu không match route nào, redirect về landing page */}
-        <Redirect to="/" />
-      </Switch>
+            <Route
+              path="/add-hotel"
+              element={
+                <Layout>
+                  <AddHotel />
+                </Layout>
+              }
+            />
+            <Route
+              path="/edit-hotel/:hotelId"
+              element={
+                <Layout>
+                  <EditHotel />
+                </Layout>
+              }
+            />
+            <Route
+              path="/my-hotels"
+              element={
+                <Layout>
+                  <MyHotels />
+                </Layout>
+              }
+            />
+            <Route
+              path="/my-bookings"
+              element={
+                <Layout>
+                  <MyBookings />
+                </Layout>
+              }
+            />
+          </>
+        )}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+      <Toaster />
     </Router>
   );
 };
 
 export default App;
-

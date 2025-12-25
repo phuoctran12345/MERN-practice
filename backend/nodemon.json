@@ -1,3 +1,8 @@
 {
-  "ext": "js json scss hbs"
+  "//": "mấy cái này dùng để  định nghĩa các folder cấu hình",
+  "watch": ["src", "index.ts", "../shared"],
+  "ext": "ts,json",
+  "ignore": ["src/**/*.spec.ts", "node_modules"],
+  "exec": "ts-node index.ts"
 }
+

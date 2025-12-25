@@ -24,3 +24,6 @@ export interface SearchData {
   guests: number;
 }
 
+
+
+

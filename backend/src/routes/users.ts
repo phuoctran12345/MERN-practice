@@ -34,15 +34,22 @@ router.post(
     }),
   ],
 
-
-
-
   //Custom Validation middleware: Xử lý kết quả validation
   (req, res, next) => {
 
 
-    const errors = validationResult(req);
-  }
+    const errors = validationResult(req); // lấy danh sách lỗi từ validation
 
+      // Nếu có lỗi validation
+      if (!errors.isEmpty()) {
+        // Trả về lỗi 400 và dừng (không gọi next())
+        return res.status(400).json({ message: errors.array() });
+      }
 
+      next(); // tiếp tục xử lsy request
+  },
+
+  userController.registerUser
 );
+
+export default router;

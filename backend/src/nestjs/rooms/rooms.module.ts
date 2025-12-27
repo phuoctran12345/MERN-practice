@@ -1,0 +1,20 @@
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { RoomsController } from "./rooms.controller";
+import { RoomsService } from "./rooms.service";
+import { Room, RoomSchema } from "./schemas/room.schema";
+
+/**
+ * MODULE: RoomsModule
+ * MỤC ĐÍCH: Module quản lý Rooms (NestJS)
+ */
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }]),
+  ],
+  controllers: [RoomsController],
+  providers: [RoomsService],
+  exports: [RoomsService], // Export để modules khác sử dụng
+})
+export class RoomsModule {}
+

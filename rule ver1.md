@@ -284,3 +284,26 @@ Table audit_logs {
   target_id varchar [note: 'ID của đối tượng bị tác động']
   timestamp timestamp
 }
+
+
+Cách 3: Hybrid approach (khuyến nghị)
+
+Giữ Express cho code cũ, dùng NestJS cho features mới:
+
+backend/
+├── src/
+│   ├── express/              # Code Express cũ
+│   │   ├── routes/
+│   │   │   ├── auth.ts
+│   │   │   ├── hotels.ts
+│   │   │   └── bookings.ts
+│   │   └── controllers/
+│   │
+│   ├── nestjs/              # Code NestJS mới
+│   │   ├── notifications/   # Module mới
+│   │   │   ├── notifications.controller.ts
+│   │   │   ├── notifications.service.ts
+│   │   │   └── notifications.module.ts
+│   │   └── app.module.ts
+│   │
+│   └── index.ts             # Main entry

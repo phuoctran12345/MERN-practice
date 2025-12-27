@@ -2,23 +2,31 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import "dotenv/config";
 import mongoose from "mongoose";
-import userRoutes from "./routes/users";
-import authRoutes from "./routes/auth";
+// Express routes imports
+import userRoutes from "./express/routes/users";
+import authRoutes from "./express/routes/auth";
+import myHotelRoutes from "./express/routes/my-hotels";
+import hotelRoutes from "./express/routes/hotels";
+import bookingRoutes from "./express/routes/my-bookings";
+import bookingsManagementRoutes from "./express/routes/bookings";
+import healthRoutes from "./express/routes/health";
+import businessInsightsRoutes from "./express/routes/business-insights";
+import roomsRoutes from "./express/routes/rooms";
+import serviceRequestsRoutes from "./express/routes/service-requests";
+import bookingOperationsRoutes from "./express/routes/booking-operations";
+
+// Shared imports
 import cookieParser from "cookie-parser";
 import path from "path";
 import { v2 as cloudinary } from "cloudinary";
-import myHotelRoutes from "./routes/my-hotels";
-import hotelRoutes from "./routes/hotels";
-import bookingRoutes from "./routes/my-bookings";
-import bookingsManagementRoutes from "./routes/bookings";
-import healthRoutes from "./routes/health";
-import businessInsightsRoutes from "./routes/business-insights";
 import swaggerUi from "swagger-ui-express";
-import { specs } from "./swagger";
+import { specs } from "./shared/swagger";
 import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+
+// Removed NestJS - Using Express only
 
 // Environment Variables Validation
 const requiredEnvVars = [
@@ -207,6 +215,11 @@ app.use("/api/bookings", bookingsManagementRoutes);
 app.use("/api/health", healthRoutes);
 app.use("/api/business-insights", businessInsightsRoutes);
 
+// V2 APIs (New Features - Express)
+app.use("/api/v2/rooms", roomsRoutes);
+app.use("/api/v2/service-requests", serviceRequestsRoutes);
+app.use("/api/v2/booking-operations", bookingOperationsRoutes);
+
 // Swagger API Documentation
 app.use(
   "/api-docs",
@@ -220,9 +233,12 @@ app.use(
 // Dynamic Port Configuration (for Render and local development)
 const PORT = process.env.PORT || 7002;
 
+// Start Express server
 const server = app.listen(PORT, () => {
   console.log("🚀 ============================================");
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Express Server running on port ${PORT}`);
+  console.log(`📦 Express routes: /api/*`);
+  console.log(`🆕 V2 routes: /api/v2/*`);
   console.log(`🌐 Local: http://localhost:${PORT}`);
   console.log(`📚 API Docs: http://localhost:${PORT}/api-docs`);
   console.log(`💚 Health Check: http://localhost:${PORT}/api/health`);
@@ -230,22 +246,24 @@ const server = app.listen(PORT, () => {
 });
 
 // Graceful Shutdown Handler
-const gracefulShutdown = (signal: string) => {
+const gracefulShutdown = async (signal: string) => {
   console.log(`\n⚠️  ${signal} received. Starting graceful shutdown...`);
 
-  server.close(async () => {
-    console.log("🔒 HTTP server closed");
+  try {
+    // Close Express server
+    server.close(async () => {
+      console.log("🔒 HTTP server closed");
 
-    try {
+      // Close MongoDB connection
       await mongoose.connection.close();
       console.log("🔒 MongoDB connection closed");
       console.log("✅ Graceful shutdown completed");
       process.exit(0);
-    } catch (error) {
-      console.error("❌ Error during shutdown:", error);
-      process.exit(1);
-    }
-  });
+    });
+  } catch (error) {
+    console.error("❌ Error during shutdown:", error);
+    process.exit(1);
+  }
 
   // Force shutdown after 30 seconds
   setTimeout(() => {

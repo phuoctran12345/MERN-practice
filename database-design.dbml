@@ -1,0 +1,184 @@
+// ==========================================
+// SMART HOTEL - DATABASE DESIGN (FULL FIXED)
+// Công cụ: dbdiagram.io
+// ==========================================
+
+// 1. QUẢN LÝ CÔNG TY
+Table companies {
+  id ObjectId [primary key]
+  name varchar
+  tax_id varchar [unique]
+  address text
+  representative varchar
+  phone varchar
+  email varchar
+  isActive boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    tax_id [unique]
+    isActive
+  }
+}
+
+// 2. NGƯỜI DÙNG
+Table users {
+  id ObjectId [primary key]
+  company_id ObjectId [ref: > companies.id]
+  email varchar [unique]
+  password_hash varchar
+  firstName varchar
+  lastName varchar
+  role varchar [note: 'user, admin, hotel_owner, receptionist, manager']
+  phone varchar
+  address json 
+  preferences json
+  totalBookings integer [default: 0]
+  totalSpent decimal [default: 0]
+  lastLogin timestamp
+  isActive boolean [default: true]
+  emailVerified boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// 3. KHÁCH SẠN
+Table hotels {
+  id ObjectId [primary key]
+  company_id ObjectId [ref: > companies.id]
+  userId ObjectId [ref: > users.id]
+  name varchar
+  city varchar
+  country varchar
+  description text
+  type varchar[]
+  adultCount integer
+  childCount integer
+  facilities varchar[]
+  pricePerNight decimal
+  starRating integer
+  imageUrls varchar[]
+  location json
+  contact json
+  policies json
+  amenities json
+  totalBookings integer [default: 0]
+  totalRevenue decimal [default: 0]
+  averageRating decimal [default: 0]
+  reviewCount integer [default: 0]
+  occupancyRate decimal [default: 0]
+  isActive boolean [default: true]
+  isFeatured boolean [default: false]
+  lastUpdated timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    userId
+    city
+    (city, starRating) [name: 'city_rating_idx']
+    (pricePerNight, starRating) [name: 'price_rating_idx']
+  }
+}
+
+// 4. PHÒNG
+Table rooms {
+  id ObjectId [primary key]
+  hotel_id ObjectId [ref: > hotels.id]
+  roomNumber varchar
+  roomType varchar [note: 'SINGLE, DOUBLE, SUITE, DELUXE']
+  basePrice decimal
+  status varchar [default: 'AVAILABLE']
+  maxOccupancy integer
+  bedType varchar
+  amenities varchar[]
+  floor integer
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// 5. ĐẶT PHÒNG
+Table bookings {
+  id ObjectId [primary key]
+  userId ObjectId [ref: > users.id]
+  hotelId ObjectId [ref: > hotels.id]
+  roomId ObjectId [ref: > rooms.id]
+  firstName varchar
+  lastName varchar
+  email varchar
+  phone varchar
+  adultCount integer
+  childCount integer
+  checkIn timestamp
+  checkOut timestamp
+  totalCost decimal
+  status varchar [note: 'pending, confirmed, checked_in, completed, cancelled']
+  paymentStatus varchar [note: 'pending, paid, failed, refunded']
+  paymentMethod varchar
+  paymentIntentId varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    (userId, created_at) [name: 'user_bookings_idx']
+    (hotelId, checkIn) [name: 'hotel_checkin_idx']
+  }
+}
+
+// 6. HỢP ĐỒNG (CLM)
+Table contracts {
+  id ObjectId [primary key]
+  company_id ObjectId [ref: > companies.id]
+  customer_id ObjectId [ref: > users.id]
+  hotel_id ObjectId [ref: > hotels.id]
+  contractCode varchar [unique]
+  status varchar [note: 'DRAFT, ACTIVE, EXPIRED, TERMINATED']
+  signedAt Date
+  effectiveDate Date
+  expiryDate Date
+  renewalDate Date
+  fileUrl varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// 7. TÀI CHÍNH HỢP ĐỒNG (1-1 với Contract)
+Table contract_financials {
+  id ObjectId [primary key]
+  contract_id ObjectId [ref: - contracts.id]
+  rentAmount decimal
+  deposit decimal
+  paymentSchedule text
+  currency varchar [default: 'VND']
+}
+
+// 8. PHÂN TÍCH AI (1-1 với Contract)
+Table ai_contract_analysis {
+  id ObjectId [primary key]
+  contract_id ObjectId [ref: - contracts.id]
+  summary text
+  riskLevel varchar [note: 'LOW, MEDIUM, HIGH']
+  riskTags varchar[]
+  vectorId varchar
+  lastAnalyzed timestamp
+}
+
+// 9. DỊCH VỤ PHÁT SINH
+Table extra_services {
+  id ObjectId [primary key]
+  booking_id ObjectId [ref: > bookings.id]
+  service_name varchar
+  price decimal
+  requested_at timestamp [default: `now()`]
+}
+
+// 10. NHẬT KÝ HỆ THỐNG
+Table audit_logs {
+  id ObjectId [primary key]
+  user_id ObjectId [ref: > users.id]
+  action varchar
+  targetType varchar
+  targetId varchar
+  timestamp timestamp [default: `now()`]
+}

@@ -1,8 +1,8 @@
 {
   "//": "mấy cái này dùng để  định nghĩa các folder cấu hình",
-  "watch": ["src", "index.ts", "../shared"],
+  "watch": ["src", "../shared"],
   "ext": "ts,json",
   "ignore": ["src/**/*.spec.ts", "node_modules"],
-  "exec": "ts-node index.ts"
+  "exec": "ts-node src/index.ts"
 }
 

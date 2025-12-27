@@ -4,6 +4,7 @@ export interface IBooking extends Document {
   _id: string;
   userId: string;
   hotelId: string;
+  roomId?: string; // ✅ THÊM: ID phòng cụ thể được đặt
   firstName: string;
   lastName: string;
   email: string;
@@ -13,12 +14,16 @@ export interface IBooking extends Document {
   checkIn: Date;
   checkOut: Date;
   totalCost: number;
-  status: "pending" | "confirmed" | "cancelled" | "completed" | "refunded";
+  finalTotalCost?: number; // ✅ THÊM: Tổng tiền cuối (bao gồm extra services)
+  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "refunded"; // ✅ THÊM: "checked_in"
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
-  paymentMethod: string;
-  specialRequests: string;
-  cancellationReason: string;
+  paymentMethod?: string;
+  paymentIntentId?: string; // ✅ THÊM: Stripe Payment Intent ID
+  specialRequests?: string;
+  cancellationReason?: string;
   refundAmount: number;
+  checkedInAt?: Date; // ✅ THÊM: Thời gian thực tế check-in
+  checkedOutAt?: Date; // ✅ THÊM: Thời gian thực tế check-out
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +32,7 @@ const bookingSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true, index: true },
     hotelId: { type: String, required: true, index: true },
+    roomId: { type: String, index: true }, // ✅ THÊM: ID phòng cụ thể
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, index: true },
@@ -36,9 +42,10 @@ const bookingSchema = new mongoose.Schema(
     checkIn: { type: Date, required: true, index: true },
     checkOut: { type: Date, required: true },
     totalCost: { type: Number, required: true },
+    finalTotalCost: { type: Number }, // ✅ THÊM: Tổng tiền cuối
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed", "refunded"],
+      enum: ["pending", "confirmed", "checked_in", "completed", "cancelled", "refunded"], // ✅ THÊM: "checked_in"
       default: "pending",
       index: true,
     },
@@ -49,9 +56,12 @@ const bookingSchema = new mongoose.Schema(
       index: true,
     },
     paymentMethod: { type: String },
+    paymentIntentId: { type: String }, // ✅ THÊM: Stripe Payment Intent ID
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },
+    checkedInAt: { type: Date }, // ✅ THÊM: Thời gian check-in thực tế
+    checkedOutAt: { type: Date }, // ✅ THÊM: Thời gian check-out thực tế
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
@@ -64,6 +74,7 @@ const bookingSchema = new mongoose.Schema(
 // Add compound indexes for better query performance
 bookingSchema.index({ userId: 1, createdAt: -1 });
 bookingSchema.index({ hotelId: 1, checkIn: 1 });
+bookingSchema.index({ roomId: 1, checkIn: 1 }); // ✅ THÊM: Index cho roomId
 bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ paymentStatus: 1, createdAt: -1 });
 bookingSchema.index({ checkIn: 1, status: 1 });

@@ -4,6 +4,7 @@ import { UserType } from "../../../shared/types";
 
 const userSchema = new mongoose.Schema(
   {
+    companyId: { type: String, index: true }, // ✅ THÊM: ID công ty (optional - có thể null cho customer)
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
     firstName: { type: String, required: true },
@@ -11,7 +12,7 @@ const userSchema = new mongoose.Schema(
     // New fields for better user management
     role: {
       type: String,
-      enum: ["user", "admin", "hotel_owner"],
+      enum: ["user", "admin", "hotel_owner", "receptionist", "manager"], // ✅ THÊM: "receptionist", "manager"
       default: "user",
     },
     phone: { type: String },

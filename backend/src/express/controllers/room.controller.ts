@@ -15,7 +15,7 @@ export const createRoom = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: errors.array() });
     }
 
-    const { hotelId, roomNumber, roomType, basePrice, maxOccupancy, bedType, amenities, floor, status } = req.body;
+    const { hotelId, roomNumber, roomType, basePrice, maxOccupancy, bedType, amenities, floor, status } = req.body; // khởi tạo body
 
     // B1: Kiểm tra hotel có tồn tại không
     const hotel = await Hotel.findById(hotelId);
@@ -24,7 +24,7 @@ export const createRoom = async (req: Request, res: Response) => {
     }
 
     // B2: Kiểm tra roomNumber đã tồn tại trong hotel chưa
-    const existingRoom = await Room.findOne({
+    const existingRoom = await Room.findOne({ // lệnh tìm kiếm phần tử đầu tiên trong DB của moôngse
       hotelId: hotelId,
       roomNumber: roomNumber,
     });

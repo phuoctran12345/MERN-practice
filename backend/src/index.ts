@@ -14,6 +14,7 @@ import businessInsightsRoutes from "./express/routes/business-insights";
 import roomsRoutes from "./express/routes/rooms";
 import serviceRequestsRoutes from "./express/routes/service-requests";
 import bookingOperationsRoutes from "./express/routes/booking-operations";
+import paymentRoutes from "./express/routes/payments";
 
 // Shared imports
 import cookieParser from "cookie-parser";
@@ -35,7 +36,10 @@ const requiredEnvVars = [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
-  "STRIPE_API_KEY",
+  "PAYOS_CLIENT_ID",
+  "PAYOS_API_KEY",
+  "PAYOS_CHECKSUM_KEY",
+  // "STRIPE_API_KEY", // ❌ XÓA (không dùng nữa)
 ];
 
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
@@ -219,6 +223,9 @@ app.use("/api/business-insights", businessInsightsRoutes);
 app.use("/api/v2/rooms", roomsRoutes);
 app.use("/api/v2/service-requests", serviceRequestsRoutes);
 app.use("/api/v2/booking-operations", bookingOperationsRoutes);
+
+// Payment APIs (PayOS)
+app.use("/api/payments", paymentRoutes);
 
 // Swagger API Documentation
 app.use(

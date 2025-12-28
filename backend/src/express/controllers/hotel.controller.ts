@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import Hotel from "../../models/hotel";
 import Booking from "../../models/booking";
 import User from "../../models/user";
-import { BookingType, HotelSearchResponse } from "../../../shared/types";
-import Stripe from "stripe";
+import { BookingType, HotelSearchResponse } from "types";
+// ❌ XÓA Stripe
+// import Stripe from "stripe";
+// const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
-
-// Khởi tạo Stripe instance
-const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
+// ✅ THÊM PayOS
+import { createPaymentLink, getPaymentInfo } from "../../services/payos.service";
 
 // ============================================
 // HELPER FUNCTION: createPaymentIntent
@@ -137,79 +138,90 @@ export const getHotelById = async (req: Request, res: Response) => {
 }
 
 
-//createPaymentIntent: Tạo intent thanh toán cho Stripe
+//createPaymentIntent: Tạo payment link từ PayOS
 export const createPaymentIntent = async (req: Request, res: Response) => {
     try {
         const { numberOfNights } = req.body;
         const hotelId = req.params.hotelId;
+        const userId = req.userId;
 
         // B1: Kiểm tra khách sạn có tồn tại không
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) {
-        return res.status(400).json({ message: "Không tìm thấy khách sạn" });
+            return res.status(400).json({ message: "Không tìm thấy khách sạn" });
         }
 
-        // B2: Tính tổng tiền (Giá x Số đêm)
+        // B2: Tính tổng tiền (Giá x Số đêm) - VND
         const totalCost = hotel.pricePerNight * numberOfNights;
 
-        // B3: Gửi yêu cầu tạo Intent thanh toán tới Stripe
-        // Lưu ý: Stripe tính theo đơn vị nhỏ nhất (ví dụ: cents cho USD, pence cho GBP) nên phải nhân 100
-        const paymentIntent = await stripe.paymentIntents.create({
-        amount: totalCost * 100, 
-        currency: "gbp", // Đơn vị Bảng Anh (có thể đổi thành "usd" hoặc "vnd")
-        metadata: {
-            hotelId,
-            userId: req.userId, // Gắn ID người dùng để đối chiếu sau khi thanh toán xong
-        },
+        // B3: Tạo orderCode unique (dùng timestamp + random)
+        const orderCode = Date.now() + Math.floor(Math.random() * 1000);
+
+        // B4: Tạo payment link từ PayOS
+        const paymentLink = await createPaymentLink({
+            orderCode: orderCode,
+            amount: totalCost, // VND (không cần nhân 100 như Stripe)
+            description: `Đặt phòng khách sạn ${hotel.name} - ${numberOfNights} đêm`,
+            returnUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/booking/success?orderCode=${orderCode}&hotelId=${hotelId}`,
+            cancelUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/booking/cancel`,
+            items: [
+                {
+                    name: `Phòng ${hotel.name}`,
+                    quantity: 1,
+                    price: totalCost,
+                },
+            ],
         });
 
-        // B4: Kiểm tra nếu Stripe không trả về client_secret
-        if (!paymentIntent.client_secret) {
-        return res.status(500).json({ message: "Lỗi khi tạo payment intent" });
-        }
-
-        // B5: Trả về clientSecret để Frontend dùng hoàn tất thanh toán (Stripe Element)
-        const response = {
-        paymentIntentId: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret.toString(),
-        totalCost,
-        };
-
-        res.send(response);
-
-    } catch (error){
-        console.log("Lỗi createPaymentIntent: " + error);
-        res.status(500).json({ message: "Lỗi khi tạo intent thanh toán" });
+        // B5: Trả về payment link
+        res.status(200).json({
+            paymentLinkId: paymentLink.id,
+            checkoutUrl: paymentLink.checkoutUrl, // URL để redirect khách hàng
+            orderCode: orderCode,
+            totalCost: totalCost,
+            qrCode: paymentLink.qrCode, // QR code để quét
+        });
+    } catch (error) {
+        console.error("❌ Lỗi createPaymentLink:", error);
+        res.status(500).json({ 
+            message: "Lỗi khi tạo payment link",
+            error: error instanceof Error ? error.message : String(error)
+        });
     }
 }
 
 
-// Lưu đơn đặt phòng vào DB
+// Lưu đơn đặt phòng vào DB sau khi thanh toán thành công qua PayOS
 export const createBooking = async (req: Request, res: Response) => {
     try {
-      const paymentIntentId = req.body.paymentIntentId;
+      const { orderCode } = req.body; // Thay paymentIntentId bằng orderCode
+
+      // Kiểm tra orderCode có tồn tại không
+      if (!orderCode) {
+        return res.status(400).json({ 
+          message: "orderCode là bắt buộc. Vui lòng cung cấp orderCode từ PayOS." 
+        });
+      }
   
-      // B1: Truy vấn lại thông tin thanh toán từ Stripe bằng ID nhận được từ Frontend
-      const paymentIntent = await stripe.paymentIntents.retrieve(
-        paymentIntentId as string
-      );
+      // B1: Lấy thông tin payment từ PayOS
+      const paymentInfo = await getPaymentInfo(orderCode);
   
-      if (!paymentIntent) {
+      if (!paymentInfo) {
         return res.status(400).json({ message: "Không tìm thấy thông tin thanh toán" });
       }
   
-      // B2: Bảo mật - Kiểm tra thông tin trong Payment Intent có khớp với request không
-      if (
-        paymentIntent.metadata.hotelId !== req.params.hotelId ||
-        paymentIntent.metadata.userId !== req.userId
-      ) {
-        return res.status(400).json({ message: "Dữ liệu thanh toán không trùng khớp" });
+      // B2: Kiểm tra trạng thái thanh toán
+      if (paymentInfo.status !== "PAID") {
+        return res.status(400).json({
+          message: `Thanh toán chưa hoàn tất. Trạng thái: ${paymentInfo.status}`,
+        });
       }
   
-      // B3: Kiểm tra trạng thái thanh toán từ phía Stripe
-      if (paymentIntent.status !== "succeeded") {
-        return res.status(400).json({
-          message: `Thanh toán chưa hoàn tất. Trạng thái: ${paymentIntent.status}`,
+      // B3: Kiểm tra thông tin có khớp không (nếu có metadata)
+      const hotelId = req.params.hotelId || paymentInfo.data?.hotelId;
+      if (paymentInfo.data?.userId && paymentInfo.data.userId !== req.userId) {
+        return res.status(400).json({ 
+          message: "Dữ liệu thanh toán không trùng khớp" 
         });
       }
   
@@ -217,10 +229,11 @@ export const createBooking = async (req: Request, res: Response) => {
       const newBooking: BookingType = {
         ...req.body,              // Thông tin người đặt, ngày check-in/out từ form
         userId: req.userId,       // ID người đặt
-        hotelId: req.params.hotelId, 
+        hotelId: hotelId, 
         createdAt: new Date(),
         status: "confirmed",      // Mặc định xác nhận luôn vì đã thanh toán xong
         paymentStatus: "paid",
+        orderCode: orderCode,     // Lưu orderCode thay vì paymentIntentId
       };
   
       // B5: Lưu Booking vào DB
@@ -228,7 +241,7 @@ export const createBooking = async (req: Request, res: Response) => {
       await booking.save();
   
       // B6: Cập nhật thống kê cho Khách sạn ($inc: tăng giá trị hiện có)
-      await Hotel.findByIdAndUpdate(req.params.hotelId, {
+      await Hotel.findByIdAndUpdate(hotelId, {
         $inc: {
           totalBookings: 1,           // Tăng tổng số đơn đặt
           totalRevenue: newBooking.totalCost, // Cộng dồn doanh thu
@@ -244,10 +257,19 @@ export const createBooking = async (req: Request, res: Response) => {
       });
   
       // Trả về thành công
-      res.status(200).send();
+      res.status(200).json({ 
+        message: "Đặt phòng thành công",
+        booking 
+      });
     } catch (error) {
-      console.log("Lỗi createBooking:", error);
-      res.status(500).json({ message: "Đã có lỗi xảy ra khi tạo đơn đặt phòng" });
+      console.error("❌ Lỗi createBooking:");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : String(error));
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ 
+        message: "Đã có lỗi xảy ra khi tạo đơn đặt phòng",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   };
 

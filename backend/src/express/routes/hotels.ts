@@ -30,8 +30,8 @@ router.post(
 
 router.post(
   "/:hotelId/bookings",
-  verifyToken,
-  hotelController.createBooking
+  verifyToken,                  // gọi thằng verifyToken ni thì phải cần JWT token 
+  hotelController.createBooking // gọi thằng createBooking ni thì phải cần JWT token 
 );
 
 export default router;

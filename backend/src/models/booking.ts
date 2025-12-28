@@ -18,7 +18,8 @@ export interface IBooking extends Document {
   status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "refunded"; // ✅ THÊM: "checked_in"
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   paymentMethod?: string;
-  paymentIntentId?: string; // ✅ THÊM: Stripe Payment Intent ID
+  paymentIntentId?: string; // ⚠️ DEPRECATED: Stripe Payment Intent ID (giữ lại để tương thích)
+  orderCode?: number; // ✅ THÊM: PayOS Order Code
   specialRequests?: string;
   cancellationReason?: string;
   refundAmount: number;
@@ -56,7 +57,8 @@ const bookingSchema = new mongoose.Schema(
       index: true,
     },
     paymentMethod: { type: String },
-    paymentIntentId: { type: String }, // ✅ THÊM: Stripe Payment Intent ID
+    paymentIntentId: { type: String }, // ⚠️ DEPRECATED: Stripe (giữ lại để tương thích)
+    orderCode: { type: Number, index: true }, // ✅ THÊM: PayOS Order Code
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },

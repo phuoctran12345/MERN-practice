@@ -1,2 +1,123 @@
-node_modules
+# Environment Variables & Secrets
 .env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+*.env
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build Outputs
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+.next/
+out/
+.nuxt/
+.cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.log
+mongodb-data/
+data/db/
+*.dump
+
+# OS & Editor
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.cursorignore
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+test-results/
+playwright-report/
+
+# Logs
+logs/
+*.log
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+.cache/
+.temp/
+tmp/
+temp/
+
+# Cloud & Deployment
+.vercel/
+.netlify/
+.serverless/
+.aws-sam/
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Uploaded Files & Media
+uploads/
+public/uploads/
+data/hotel_images/*.jpg
+data/hotel_images/*.png
+data/hotel_images/*.jpeg
+data/hotel_images/*.gif
+data/hotel_images/*.webp
+!data/hotel_images/.gitkeep
+
+# SSL/TLS Certificates
+*.crt
+*.cer
+*.der
+*.p7b
+*.p7r
+*.srl
+*.csr
+
+# Analytics & Monitoring
+.sentryclirc
+.sentry/
+*.map
+
+# Project Specific
+*.tsbuildinfo
+.eslintcache
+.prettierignore
+.local/
+local/

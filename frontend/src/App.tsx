@@ -1,17 +1,17 @@
 import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
+  BrowserRouter as Router, // Bao bọc toàn bộ ứng dụng để sử dụng điều hướng
+  Route,                   // Định nghĩa một tuyến đường đơn lẻ
+  Routes,                  // Chứa danh sách các Route, giúp chọn ra Route khớp nhất
+  Navigate,                // Dùng để chuyển hướng người dùng (Redirect)
 } from "react-router-dom";
-import Layout from "./layouts/Layout";
-import AuthLayout from "./layouts/AuthLayout";
-import ScrollToTop from "./components/ScrollToTop";
-import { Toaster } from "./components/ui/toaster";
+import Layout from "./layouts/Layout"; // Giao diện chung (thường có Header/Footer)
+import AuthLayout from "./layouts/AuthLayout"; // Giao diện riêng cho các trang đăng nhập/đăng ký
+import ScrollToTop from "./components/ScrollToTop"; // Tự động cuộn lên đầu trang khi chuyển trang
+import { Toaster } from "./components/ui/toaster"; // Hiển thị các thông báo (toast) cho người dùng
 import Register from "./pages/Register";
 import SignIn from "./pages/SignIn";
 import AddHotel from "./pages/AddHotel";
-import useAppContext from "./hooks/useAppContext";
+import useAppContext from "./hooks/useAppContext"; // Hook lấy trạng thái ứng dụng (ví dụ: đã đăng nhập chưa)
 import MyHotels from "./pages/MyHotels";
 import EditHotel from "./pages/EditHotel";
 import Search from "./pages/Search";
@@ -24,11 +24,16 @@ import ApiStatus from "./pages/ApiStatus";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
 const App = () => {
+  // Lấy giá trị isLoggedIn từ Context để kiểm tra người dùng đã đăng nhập hay chưa
   const { isLoggedIn } = useAppContext();
+
   return (
     <Router>
+      {/* Luôn cuộn lên đầu trang mỗi khi route thay đổi */}
       <ScrollToTop />
+      
       <Routes>
+        {/* --- CÁC ROUTE CÔNG KHAI (Ai cũng xem được) --- */}
         <Route
           path="/"
           element={
@@ -45,6 +50,7 @@ const App = () => {
             </Layout>
           }
         />
+        {/* Route động với tham số hotelId */}
         <Route
           path="/detail/:hotelId"
           element={
@@ -53,6 +59,7 @@ const App = () => {
             </Layout>
           }
         />
+
         <Route
           path="/api-docs"
           element={
@@ -61,6 +68,7 @@ const App = () => {
             </Layout>
           }
         />
+        
         <Route
           path="/api-status"
           element={
@@ -77,6 +85,8 @@ const App = () => {
             </Layout>
           }
         />
+
+        {/* --- CÁC ROUTE XÁC THỰC (Đăng ký/Đăng nhập) --- */}
         <Route
           path="/register"
           element={
@@ -94,6 +104,7 @@ const App = () => {
           }
         />
 
+        {/* --- CÁC ROUTE BẢO VỆ (Chỉ dành cho người đã đăng nhập) --- */}
         {isLoggedIn && (
           <>
             <Route
@@ -104,7 +115,6 @@ const App = () => {
                 </Layout>
               }
             />
-
             <Route
               path="/add-hotel"
               element={
@@ -139,8 +149,13 @@ const App = () => {
             />
           </>
         )}
+
+        {/* --- XỬ LÝ KHI KHÔNG TÌM THẤY TRANG --- 
+            Nếu URL không khớp với bất kỳ route nào ở trên, chuyển hướng về trang chủ */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+
+      {/* Component hiển thị thông báo nổi trên cùng */}
       <Toaster />
     </Router>
   );

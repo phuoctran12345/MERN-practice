@@ -146,11 +146,11 @@ export type SearchParams = {
 };
 
 export const searchHotels = async (
-  searchParams: SearchParams
+  searchParams: SearchParams                  // tham số đàu vào( các object chứa các tiêu chí tìm kiếm)
 ): Promise<HotelSearchResponse> => {
   const queryParams = new URLSearchParams();
 
-  // Only add destination if it's not empty
+  //nếu không trống
   if (searchParams.destination && searchParams.destination.trim() !== "") {
     queryParams.append("destination", searchParams.destination.trim());
   }

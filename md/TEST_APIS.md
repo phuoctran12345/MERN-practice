@@ -9,41 +9,114 @@
 
 ---
 
+## 📊 Đánh Giá Use Cases (Theo rule.md)
+
+| STT | Use Case | Tác nhân | Trạng thái | APIs |
+|:---:|:---------|:---------|:----------:|:-----|
+| 1 | **Tìm kiếm Khách sạn/Phòng** | Khách hàng | ✅ **SẴN SÀNG** | `GET /api/hotels/search`<br>`GET /api/v2/rooms/available` |
+| 2 | **Đăng ký Tài khoản** | Khách hàng | ✅ **SẴN SÀNG** | `POST /api/users/register` |
+| 3 | **Đăng nhập** | Khách hàng, Lễ tân, Quản lý | ✅ **SẴN SÀNG** | `POST /api/auth/login` |
+| 4 | **Đặt phòng** | Khách hàng | ✅ **SẴN SÀNG** | `POST /api/hotels/:hotelId/bookings` |
+| 5 | **Thanh toán Trực tuyến (PayOS)** | Khách hàng | ✅ **SẴN SÀNG** | `POST /api/hotels/:hotelId/bookings/payment-intent` |
+| 6 | **Quản lý Đặt phòng (Xem/Hủy)** | Khách hàng | ✅ **SẴN SÀNG** | `GET /api/my-bookings`<br>`DELETE /api/my-bookings/:id` |
+| 7 | **Quản lý Đặt phòng (Sửa/Hủy Đơn)** | Lễ tân | ✅ **SẴN SÀNG** | `PUT /api/bookings/:id`<br>`PATCH /api/bookings/:id/status`<br>`GET /api/bookings` |
+| 8 | **Yêu cầu Dịch vụ** | Khách hàng | ✅ **SẴN SÀNG** | `POST /api/v2/service-requests`<br>`GET /api/v2/service-requests` |
+| 9 | **Thực hiện Check-in** | Lễ tân | ✅ **SẴN SÀNG** | `POST /api/v2/booking-operations/check-in` |
+| 10 | **Thực hiện Check-out** | Lễ tân | ✅ **SẴN SÀNG** | `POST /api/v2/booking-operations/check-out` |
+| 11 | **Quản lý Danh mục Phòng & KS** | Quản lý | ✅ **SẴN SÀNG** | `POST /api/my-hotels`<br>`GET /api/my-hotels`<br>`PUT /api/my-hotels/:hotelId`<br>`POST /api/v2/rooms`<br>`PATCH /api/v2/rooms/:id`<br>`DELETE /api/v2/rooms/:id` |
+| 12 | **Quản lý Giá & Khuyến mãi** | Quản lý | ✅ **SẴN SÀNG** | `POST /api/v2/promotions`<br>`GET /api/v2/promotions`<br>`GET /api/v2/promotions/active`<br>`PATCH /api/v2/promotions/:id`<br>`DELETE /api/v2/promotions/:id` |
+| 13 | **Quản lý Tài khoản Nhân viên** | Quản lý | ✅ **SẴN SÀNG** | `POST /api/v2/employees`<br>`GET /api/v2/employees`<br>`PATCH /api/v2/employees/:id`<br>`DELETE /api/v2/employees/:id` |
+| 14 | **Xem Báo cáo Thống kê** | Quản lý | ✅ **SẴN SÀNG** | `GET /api/business-insights/dashboard`<br>`GET /api/business-insights/forecast`<br>`GET /api/business-insights/performance` |
+
+### 📈 Tổng Kết
+- ✅ **Đã sẵn sàng:** 14/14 use cases (100%) 🎉
+- ✅ **Hoàn thành:** Tất cả use cases đã có APIs đầy đủ trong Express backend
+
+---
+
 ## 📋 Danh Sách APIs Đầy Đủ (Đã Xác Nhận ✅)
 
-### **Express APIs (Legacy)**
+### **Express APIs (Core)**
 ```
-POST   /api/auth/login
-POST   /api/users/register
-GET    /api/hotels/search
-POST   /api/hotels/:id/bookings
-GET    /api/my-bookings
-DELETE /api/my-bookings/:id
-PUT    /api/bookings/:id              # ✅ UC 7
-PATCH  /api/bookings/:id/status      # ✅ UC 7
-GET    /api/business-insights/dashboard
-```
+# Authentication & Users
+POST   /api/auth/login                 # ✅ UC 3
+POST   /api/users/register             # ✅ UC 2
+GET    /api/auth/validate-token
+POST   /api/auth/logout
 
-### **V2 APIs (New Features - Express)**
-```
+# Hotels & Search
+GET    /api/hotels/search              # ✅ UC 1
+GET    /api/hotels                     # ✅ UC 1
+GET    /api/hotels/:id                 # ✅ UC 1
+POST   /api/my-hotels                  # ✅ UC 11
+GET    /api/my-hotels                  # ✅ UC 11
+GET    /api/my-hotels/:id              # ✅ UC 11
+PUT    /api/my-hotels/:hotelId         # ✅ UC 11
+
+# Bookings
+POST   /api/hotels/:hotelId/bookings/payment-intent  # ✅ UC 5
+POST   /api/hotels/:hotelId/bookings   # ✅ UC 4
+GET    /api/my-bookings                # ✅ UC 6
+DELETE /api/my-bookings/:id            # ✅ UC 6
+GET    /api/bookings                   # ✅ UC 7 (Receptionist/Manager/Hotel Owner)
+PUT    /api/bookings/:id                # ✅ UC 7 (Receptionist)
+PATCH  /api/bookings/:id/status        # ✅ UC 7 (Receptionist)
+
 # Rooms
-POST   /api/v2/rooms
-GET    /api/v2/rooms
-GET    /api/v2/rooms/available
-PATCH  /api/v2/rooms/:id
-PATCH  /api/v2/rooms/:id/status
-DELETE /api/v2/rooms/:id
+POST   /api/v2/rooms                   # ✅ UC 11
+GET    /api/v2/rooms                   # ✅ UC 1, UC 11
+GET    /api/v2/rooms/available         # ✅ UC 1
+GET    /api/v2/rooms/:id               # ✅ UC 11
+PATCH  /api/v2/rooms/:id               # ✅ UC 11
+PATCH  /api/v2/rooms/:id/status       # ✅ UC 11
+DELETE /api/v2/rooms/:id               # ✅ UC 11
 
-# Service Requests  
-POST   /api/v2/service-requests
-GET    /api/v2/service-requests
-GET    /api/v2/service-requests/booking/:bookingId/total
-PATCH  /api/v2/service-requests/:id
-DELETE /api/v2/service-requests/:id
+# Service Requests
+POST   /api/v2/service-requests        # ✅ UC 8
+GET    /api/v2/service-requests        # ✅ UC 8
+GET    /api/v2/service-requests/:id   # ✅ UC 8
+GET    /api/v2/service-requests/booking/:bookingId/total  # ✅ UC 8
+PATCH  /api/v2/service-requests/:id   # ✅ UC 8
+DELETE /api/v2/service-requests/:id   # ✅ UC 8
 
-# Check-in/out
-POST   /api/v2/booking-operations/check-in
-POST   /api/v2/booking-operations/check-out
+# Booking Operations
+POST   /api/v2/booking-operations/check-in   # ✅ UC 9
+POST   /api/v2/booking-operations/check-out   # ✅ UC 10
+
+# Business Insights
+GET    /api/business-insights/dashboard       # ✅ UC 14
+GET    /api/business-insights/forecast        # ✅ UC 14
+GET    /api/business-insights/performance    # ✅ UC 14
+
+# Payments
+POST   /api/payments/payos-webhook
+
+# Health
+GET    /api/health
+GET    /api/health/detailed
+```
+
+### **Promotions APIs (Use Case 12)**
+```
+POST   /api/v2/promotions              # ✅ Tạo khuyến mãi mới (Manager)
+GET    /api/v2/promotions              # ✅ Lấy danh sách khuyến mãi (Manager)
+GET    /api/v2/promotions/active       # ✅ Lấy khuyến mãi đang hoạt động (Public)
+GET    /api/v2/promotions/:id          # ✅ Lấy thông tin khuyến mãi
+PATCH  /api/v2/promotions/:id          # ✅ Cập nhật khuyến mãi (Manager)
+DELETE /api/v2/promotions/:id          # ✅ Xóa khuyến mãi (Manager)
+POST   /api/v2/promotions/:id/increment-usage  # ✅ Tăng số lần sử dụng
+```
+
+### **Employees APIs (Use Case 13)**
+```
+POST   /api/v2/employees               # ✅ Tạo nhân viên mới (Manager)
+GET    /api/v2/employees               # ✅ Lấy danh sách nhân viên (Manager)
+GET    /api/v2/employees/role/:role  # ✅ Lấy nhân viên theo role (Manager)
+GET    /api/v2/employees/:id          # ✅ Lấy thông tin nhân viên (Manager)
+PATCH  /api/v2/employees/:id          # ✅ Cập nhật nhân viên (Manager)
+DELETE /api/v2/employees/:id          # ✅ Xóa (deactivate) nhân viên (Manager)
+PATCH  /api/v2/employees/:id/password # ✅ Đổi mật khẩu nhân viên (Manager)
+PATCH  /api/v2/employees/:id/activate # ✅ Kích hoạt nhân viên (Manager)
 ```
 
 ---
@@ -54,56 +127,6 @@ POST   /api/v2/booking-operations/check-out
 
 Mở **Terminal** (không phải MongoDB Compass Shell) và chạy:
 
-```bash
-# 1. Đăng ký User
-curl -X POST http://localhost:7002/api/users/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123",
-    "firstName": "Test",
-    "lastName": "User"
-  }'
-
-# 2. Đăng nhập
-curl -X POST http://localhost:7002/api/auth/login \
-  -H "Content-Type: application/json" \
-  -c cookies.txt \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
-
-# 3. Tạo Room (cần JWT token từ login)
-curl -X POST http://localhost:7002/api/v2/rooms \
-  -H "Content-Type: application/json" \
-  -b cookies.txt \
-  -d '{
-    "hotelId": "YOUR_HOTEL_ID_HERE",
-    "roomNumber": "101",
-    "roomType": "DOUBLE",
-    "basePrice": 500000,
-    "maxOccupancy": 2
-  }'
-
-# 4. Lấy danh sách Rooms
-curl -X GET "http://localhost:7002/api/v2/rooms?hotelId=YOUR_HOTEL_ID_HERE" \
-  -H "Content-Type: application/json" \
-  -b cookies.txt
-
-# 5. Tạo Promotion
-curl -X POST http://localhost:7002/api/v2/promotions \
-  -H "Content-Type: application/json" \
-  -b cookies.txt \
-  -d '{
-    "name": "Giảm giá 20%",
-    "description": "Khuyến mãi đặc biệt",
-    "discountType": "PERCENTAGE",
-    "discountValue": 20,
-    "startDate": "2024-01-01T00:00:00Z",
-    "endDate": "2024-12-31T23:59:59Z"
-  }'
-```
 
 ### **Cách 2: Dùng Postman (Khuyến Nghị ✅)**
 
@@ -638,7 +661,42 @@ Content-Type: application/json
 
 ---
 
-### **API 16: Update Booking Status (Receptionist/Admin)**
+### **API 16: Xem Tất Cả Bookings (Receptionist/Manager/Hotel Owner)**
+
+**Method:** `GET`  
+**URL:** `http://localhost:7002/api/bookings`  
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+```
+
+**Lưu ý:**
+- **Receptionist & Manager:** Xem tất cả bookings trong hệ thống
+- **Hotel Owner:** Chỉ xem bookings của khách sạn mình sở hữu
+- Cần role: `receptionist`, `manager`, hoặc `hotel_owner`
+
+**Kết quả:**
+```json
+{
+  "message": "Lấy danh sách bookings thành công",
+  "count": 10,
+  "bookings": [
+    {
+      "_id": "...",
+      "userId": { "firstName": "...", "lastName": "...", "email": "..." },
+      "hotelId": { "name": "...", "city": "...", "country": "..." },
+      "status": "confirmed",
+      "checkIn": "...",
+      "checkOut": "...",
+      ...
+    }
+  ]
+}
+```
+
+---
+
+### **API 17: Update Booking Status (Receptionist)**
 
 **Method:** `PATCH`  
 **URL:** `http://localhost:7002/api/bookings/YOUR_BOOKING_ID/status`  
@@ -665,7 +723,7 @@ Content-Type: application/json
 
 ---
 
-### **API 17: Update Booking (Receptionist/Admin)**
+### **API 18: Update Booking (Receptionist)**
 
 **Method:** `PUT`  
 **URL:** `http://localhost:7002/api/bookings/YOUR_BOOKING_ID`  
@@ -688,7 +746,7 @@ Content-Type: application/json
 
 ---
 
-### **API 18: Xóa Booking**
+### **API 19: Xóa Booking (Customer/Receptionist)**
 
 **Method:** `DELETE`  
 **URL:** `http://localhost:7002/api/my-bookings/YOUR_BOOKING_ID`  
@@ -698,23 +756,153 @@ Content-Type: application/json
 
 ---
 
+### **API 20: Tạo Khuyến mãi (Manager - UC 12)**
+
+**Method:** `POST`  
+**URL:** `http://localhost:7002/api/v2/promotions`  
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN
+```
+**Body (raw JSON):**
+```json
+{
+  "hotelId": "YOUR_HOTEL_ID",
+  "name": "Giảm giá 20%",
+  "description": "Khuyến mãi đặc biệt cho khách hàng",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20,
+  "startDate": "2024-12-25T00:00:00.000Z",
+  "endDate": "2024-12-31T23:59:59.000Z",
+  "minStay": 2,
+  "maxUsage": 100,
+  "isActive": true
+}
+```
+
+**Lưu ý:**
+- `hotelId` là tùy chọn (null = áp dụng cho tất cả hotels)
+- `discountType`: `PERCENTAGE` hoặc `FIXED_AMOUNT`
+- `discountValue`: Nếu PERCENTAGE thì <= 100
+- `startDate` phải trước `endDate` và không thể là quá khứ
+
+**Kết quả:** Khuyến mãi đã được tạo
+
+---
+
+### **API 21: Lấy danh sách Khuyến mãi (Manager - UC 12)**
+
+**Method:** `GET`  
+**URL:** `http://localhost:7002/api/v2/promotions?hotelId=YOUR_HOTEL_ID&isActive=true`  
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+```
+
+**Query params tùy chọn:**
+- `hotelId`: Filter theo hotel
+- `isActive`: Filter theo trạng thái (true/false)
+- `currentDate`: Filter khuyến mãi đang hoạt động tại ngày này
+
+**Kết quả:** Danh sách khuyến mãi
+
+---
+
+### **API 22: Lấy Khuyến mãi Đang Hoạt Động (Public - UC 12)**
+
+**Method:** `GET`  
+**URL:** `http://localhost:7002/api/v2/promotions/active?hotelId=YOUR_HOTEL_ID`  
+**Headers:** Không cần auth
+
+**Query params tùy chọn:**
+- `hotelId`: Filter theo hotel
+
+**Kết quả:** Danh sách khuyến mãi đang hoạt động
+
+---
+
+### **API 23: Tạo Nhân viên (Manager - UC 13)**
+
+**Method:** `POST`  
+**URL:** `http://localhost:7002/api/v2/employees`  
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN
+```
+**Body (raw JSON):**
+```json
+{
+  "email": "receptionist@hotel.com",
+  "password": "password123",
+  "firstName": "Nguyễn",
+  "lastName": "Văn A",
+  "role": "receptionist",
+  "phone": "0123456789",
+  "isActive": true
+}
+```
+
+**Lưu ý:**
+- `role` phải là: `receptionist`, `manager`, hoặc `hotel_owner`
+- `password` phải có ít nhất 6 ký tự
+- Email phải unique
+
+**Kết quả:** Nhân viên đã được tạo
+
+---
+
+### **API 24: Lấy danh sách Nhân viên (Manager - UC 13)**
+
+**Method:** `GET`  
+**URL:** `http://localhost:7002/api/v2/employees?role=receptionist&page=1&limit=10`  
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+```
+
+**Query params tùy chọn:**
+- `companyId`: Filter theo company
+- `role`: Filter theo role (`receptionist`, `manager`, `hotel_owner`)
+- `isActive`: Filter theo trạng thái (true/false)
+- `page`: Số trang (mặc định: 1)
+- `limit`: Số items mỗi trang (mặc định: 10, max: 100)
+
+**Kết quả:** Danh sách nhân viên với pagination
+
+---
+
 ## 🔄 Thứ Tự Test Khuyến Nghị
 
+### **Flow Cơ Bản (Customer)**
 1. **API 1** - Health Check (kiểm tra server)
 2. **API 2** - Register User
-3. **API 3** - Login (lưu cookie)
-4. **API 4** - Tạo Hotel → **Copy `hotelId`**
-5. **API 5** - Lấy danh sách Hotels
-6. **API 6** - Tạo Room (dùng `hotelId` từ API 4)
-7. **API 7** - Lấy danh sách Rooms
-8. **API 9** - Tạo Booking → **Copy `bookingId`**
-9. **API 10** - Lấy danh sách Bookings
-10. **API 11** - Tạo Service Request (dùng `bookingId` từ API 9)
-11. **API 12** - Lấy danh sách Service Requests
-12. **API 14** - Check-in (dùng `bookingId` từ API 9)
-13. **API 15** - Check-out (dùng `bookingId` từ API 9)
-14. **API 16** - Update Booking Status
-15. **API 18** - Xóa Booking
+3. **API 3** - Login (lưu token)
+4. **API 4** - Tìm kiếm Hotels (`GET /api/hotels/search`)
+5. **API 5** - Tạo Booking (`POST /api/hotels/:hotelId/bookings/payment-intent`)
+6. **API 6** - Thanh toán PayOS (redirect)
+7. **API 7** - Tạo Booking sau thanh toán (`POST /api/hotels/:hotelId/bookings`)
+8. **API 8** - Xem Bookings của mình (`GET /api/my-bookings`)
+9. **API 9** - Tạo Service Request (`POST /api/v2/service-requests`)
+10. **API 10** - Hủy Booking (`DELETE /api/my-bookings/:id`)
+
+### **Flow Quản Lý (Manager/Hotel Owner)**
+1. **API 3** - Login với role `manager` hoặc `hotel_owner`
+2. **API 11** - Tạo Hotel (`POST /api/my-hotels`)
+3. **API 12** - Tạo Room (`POST /api/v2/rooms`)
+4. **API 13** - Xem Tất Cả Bookings (`GET /api/bookings`)
+5. **API 14** - Xem Business Insights (`GET /api/business-insights/dashboard`)
+6. **API 20** - Tạo Khuyến mãi (`POST /api/v2/promotions`)
+7. **API 21** - Tạo Nhân viên (`POST /api/v2/employees`)
+
+### **Flow Lễ Tân (Receptionist)**
+1. **API 3** - Login với role `receptionist`
+2. **API 13** - Xem Tất Cả Bookings (`GET /api/bookings`)
+3. **API 15** - Check-in (`POST /api/v2/booking-operations/check-in`)
+4. **API 16** - Check-out (`POST /api/v2/booking-operations/check-out`)
+5. **API 17** - Update Booking Status (`PATCH /api/bookings/:id/status`)
+6. **API 18** - Update Booking (`PUT /api/bookings/:id`)
 
 ---
 
@@ -743,4 +931,14 @@ Content-Type: application/json
    - Booking: `pending` → `confirmed` → `checked_in` → `completed`
    - Service Request: `pending` → `in_progress` → `completed`
    - Room: `AVAILABLE` → `OCCUPIED` → `AVAILABLE` (sau check-out)
+
+5. **Role Permissions:**
+   - **Customer:** Xem/hủy booking của mình, tạo service request
+   - **Receptionist:** Xem tất cả bookings, update booking, check-in/out, hủy booking
+   - **Manager:** Xem tất cả bookings, quản lý hotels/rooms/promotions/employees, xem báo cáo
+   - **Hotel Owner:** Xem bookings của hotel mình, quản lý hotels/rooms
+
+6. **Use Cases Đã Hoàn Thành:**
+   - ✅ **UC 12 - Quản lý Giá & Khuyến mãi:** Đã có đầy đủ APIs `/api/v2/promotions`
+   - ✅ **UC 13 - Quản lý Tài khoản Nhân viên:** Đã có đầy đủ APIs `/api/v2/employees`
 

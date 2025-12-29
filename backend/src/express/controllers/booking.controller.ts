@@ -2,12 +2,59 @@ import { Request, Response } from "express";
 import Booking from "../../models/booking";
 import Hotel from "../../models/hotel";
 import User from "../../models/user";
+import AuditLog from "../../models/audit-log";
 import { validationResult } from "express-validator";
 
 // ============================================
+// GET /api/bookings
+// MIDDLEWARE: verifyToken, roleCheck(['receptionist', 'manager', 'hotel_owner'])
+// Xem tất cả bookings (Receptionist, Manager và Hotel Owner)
+export const getAllBookings = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const userRole = user?.role;
+    
+    let bookings;
+    
+    // Nếu là hotel_owner, chỉ xem bookings của khách sạn mình sở hữu
+    if (userRole === "hotel_owner") {
+      // Lấy danh sách hotel IDs mà user này sở hữu
+      const hotels = await Hotel.find({ userId: req.userId }).select("_id");
+      const hotelIds = hotels.map(hotel => hotel._id);
+      
+      // Lấy bookings của các hotel này
+      bookings = await Booking.find({ hotelId: { $in: hotelIds } })
+        .populate("userId", "firstName lastName email phone")
+        .populate("hotelId", "name city country")
+        .sort({ createdAt: -1 });
+    } else {
+      // Receptionist và Manager xem tất cả bookings
+      bookings = await Booking.find({})
+        .populate("userId", "firstName lastName email phone")
+        .populate("hotelId", "name city country")
+        .sort({ createdAt: -1 });
+    }
+    
+    res.status(200).json({
+      message: "Lấy danh sách bookings thành công",
+      count: bookings.length,
+      bookings: bookings
+    });
+  } catch (error) {
+    console.error("❌ Lỗi getAllBookings:");
+    console.error("Error details:", error);
+    console.error("Error message:", error instanceof Error ? error.message : String(error));
+    res.status(500).json({ 
+      message: "Lỗi khi lấy danh sách bookings",
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
+
+// ============================================
 // PUT /api/bookings/:id
-// MIDDLEWARE: verifyToken, roleCheck(['receptionist', 'admin', 'manager'])
-// Sửa đổi thông tin đặt phòng (Lễ tân)
+// MIDDLEWARE: verifyToken, roleCheck(['receptionist'])
+// Sửa đổi thông tin đặt phòng (Receptionist quản lý)
 export const updateBooking = async (req: Request, res: Response) => {
   try {
     // B1: Validate request data
@@ -29,10 +76,68 @@ export const updateBooking = async (req: Request, res: Response) => {
     }
 
     // B3: Kiểm tra trạng thái booking có thể sửa
-    if (booking.status === "completed" || booking.status === "cancelled") {
+    // Receptionist có thể update booking đã completed (nếu cần)
+    const user = (req as any).user;
+    const isReceptionist = user && user.role === "receptionist";
+    const isCompletedBooking = booking.status === "completed";
+    
+    // Nếu không phải receptionist và booking đã completed/cancelled → từ chối
+    if (!isReceptionist && (isCompletedBooking || booking.status === "cancelled")) {
       return res.status(400).json({ 
-        message: `Không thể sửa đơn đặt phòng ở trạng thái ${booking.status}` 
+        message: `Không thể sửa đơn đặt phòng ở trạng thái ${booking.status}`,
+        suggestion: "Vui lòng cập nhật status trước khi sửa thông tin booking"
       });
+    }
+    
+    // Nếu là receptionist nhưng booking đã cancelled → vẫn từ chối (cancelled là final state)
+    if (booking.status === "cancelled") {
+      return res.status(400).json({ 
+        message: `Không thể sửa đơn đặt phòng đã bị hủy (status: cancelled)`,
+        suggestion: "Booking đã bị hủy không thể sửa đổi"
+      });
+    }
+
+    // B3.1: Nếu update booking đã completed → yêu cầu lý do và ghi audit log
+    if (isCompletedBooking && isReceptionist) {
+      const { adjustmentReason } = updateData;
+      
+      if (!adjustmentReason || adjustmentReason.trim() === "") {
+        return res.status(400).json({
+          message: "Vui lòng cung cấp lý do điều chỉnh khi sửa booking đã hoàn thành",
+          requiredField: "adjustmentReason"
+        });
+      }
+
+      // Lưu thông tin cũ để ghi audit log
+      const oldData = {
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        adultCount: booking.adultCount,
+        childCount: booking.childCount,
+        totalCost: booking.totalCost,
+      };
+      
+      // Ghi audit log trước khi update
+      try {
+        await AuditLog.create({
+          userId: user._id.toString(),
+          action: "UPDATE_COMPLETED_BOOKING",
+          targetType: "BOOKING",
+          targetId: id,
+          details: {
+            oldData,
+            newData: updateData,
+            adjustmentReason: adjustmentReason,
+            updatedBy: user.email,
+            updatedByRole: user.role,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+      } catch (auditError) {
+        console.error("Lỗi ghi audit log:", auditError);
+        // Không block update nếu audit log fail, nhưng log lỗi
+      }
     }
 
     // B4: Validate dữ liệu cập nhật
@@ -64,10 +169,13 @@ export const updateBooking = async (req: Request, res: Response) => {
     }
 
     // B7: Cập nhật booking
+    // Loại bỏ adjustmentReason khỏi updateData (chỉ dùng cho audit log)
+    const { adjustmentReason, ...bookingUpdateData } = updateData;
+    
     const updatedBooking = await Booking.findByIdAndUpdate(
       id,
       {
-        ...updateData,
+        ...bookingUpdateData,
         updatedAt: new Date(),
       },
       { new: true, runValidators: true }
@@ -90,8 +198,8 @@ export const updateBooking = async (req: Request, res: Response) => {
 
 // ============================================
 // PATCH /api/bookings/:id/status
-// MIDDLEWARE: verifyToken, roleCheck(['receptionist', 'admin', 'manager'])
-// Cập nhật trạng thái đặt phòng
+// MIDDLEWARE: verifyToken, roleCheck(['receptionist'])
+// Cập nhật trạng thái đặt phòng (Receptionist quản lý)
 export const updateBookingStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

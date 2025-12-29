@@ -15,6 +15,8 @@ import roomsRoutes from "./express/routes/rooms";
 import serviceRequestsRoutes from "./express/routes/service-requests";
 import bookingOperationsRoutes from "./express/routes/booking-operations";
 import paymentRoutes from "./express/routes/payments";
+import promotionsRoutes from "./express/routes/promotions";
+import employeesRoutes from "./express/routes/employees";
 
 // Shared imports
 import cookieParser from "cookie-parser";
@@ -223,6 +225,8 @@ app.use("/api/business-insights", businessInsightsRoutes);
 app.use("/api/v2/rooms", roomsRoutes);
 app.use("/api/v2/service-requests", serviceRequestsRoutes);
 app.use("/api/v2/booking-operations", bookingOperationsRoutes);
+app.use("/api/v2/promotions", promotionsRoutes);
+app.use("/api/v2/employees", employeesRoutes);
 
 // Payment APIs (PayOS)
 app.use("/api/payments", paymentRoutes);

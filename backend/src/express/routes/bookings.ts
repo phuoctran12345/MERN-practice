@@ -7,12 +7,22 @@ import { body } from "express-validator";
 const router = express.Router();
 
 // ============================================
+// GET /api/bookings
+// Xem tất cả bookings (Receptionist, Manager và Hotel Owner)
+router.get(
+  "/",
+  verifyToken,
+  roleCheck(["receptionist", "manager", "hotel_owner"]),
+  bookingController.getAllBookings
+);
+
+// ============================================
 // PUT /api/bookings/:id
-// Sửa đổi thông tin đặt phòng (Lễ tân, Admin, Manager)
+// Sửa đổi thông tin đặt phòng (Receptionist quản lý)
 router.put(
   "/:id",
   verifyToken,
-  roleCheck(["receptionist", "admin", "manager"]),
+  roleCheck(["receptionist"]),
   [
     // Validation rules
     body("firstName").optional().isString().withMessage("Tên phải là chuỗi"),
@@ -31,11 +41,11 @@ router.put(
 
 // ============================================
 // PATCH /api/bookings/:id/status
-// Cập nhật trạng thái đặt phòng (Lễ tân, Admin, Manager)
+// Cập nhật trạng thái đặt phòng (Receptionist quản lý)
 router.patch(
   "/:id/status",
   verifyToken,
-  roleCheck(["receptionist", "admin", "manager"]),
+  roleCheck(["receptionist"]),
   [
     body("status")
       .isIn(["pending", "confirmed", "checked_in", "completed", "cancelled", "refunded"])

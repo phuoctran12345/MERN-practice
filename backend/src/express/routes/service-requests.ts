@@ -1,6 +1,7 @@
 import express from "express";
 import * as serviceRequestController from "../controllers/service-request.controller";
 import { body, param, query } from "express-validator";
+import verifyToken from "../middleware/auth";
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 // Tạo service request mới
 router.post(
   "/",
+  verifyToken, // ✅ THÊM: Xác thực user
   [
     body("bookingId").notEmpty().withMessage("bookingId là bắt buộc"),
     body("userId").notEmpty().withMessage("userId là bắt buộc"),

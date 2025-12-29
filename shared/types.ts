@@ -7,7 +7,7 @@ export type UserType = {
   password: string; // Password đã hash
   firstName: string;
   lastName: string;
-  role?: "user" | "admin" | "hotel_owner";
+  role?: "user" | "hotel_owner" | "receptionist" | "manager";
   phone?: string;
   
   address?: {

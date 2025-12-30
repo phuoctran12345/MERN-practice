@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { useToast } from "../hooks/use-toast";
@@ -57,34 +57,32 @@ export const AppContextProvider = ({
   };
 
   // Always run validation query - let it handle token checking internally
-  const { isError, isLoading, data } = useQuery(
-    "validateToken",
-    apiClient.validateToken,
-    {
-      retry: false,
-      refetchOnWindowFocus: false, // Don't refetch on focus
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      // Always enabled - let validateToken handle missing tokens
-      enabled: true,
-      // Add fallback for JWT authentication
-      onError: (error: any) => {
-        // If validateToken fails, check if we have a token in localStorage
-        const storedToken = localStorage.getItem("session_id");
-        const storedUserId = localStorage.getItem("user_id");
+  const { isError, isLoading, data } = useQuery({
+    queryKey: ["validateToken"],
+    queryFn: apiClient.validateToken,
+    retry: false,
+    refetchOnWindowFocus: false, // Don't refetch on focus
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Always enabled - let validateToken handle missing tokens
+    enabled: true,
+    // Add fallback for JWT authentication
+    onError: (error: any) => {
+      // If validateToken fails, check if we have a token in localStorage
+      const storedToken = localStorage.getItem("session_id");
+      const storedUserId = localStorage.getItem("user_id");
 
-        if (storedToken && error.response?.status === 401) {
-          console.log(
-            "JWT token found but validation failed - possible token expiration"
-          );
+      if (storedToken && error.response?.status === 401) {
+        console.log(
+          "JWT token found but validation failed - possible token expiration"
+        );
 
-          // If we also have a user ID, we can be more confident it's a valid session
-          if (storedUserId) {
-            console.log("JWT session confirmed - using localStorage fallback");
-          }
+        // If we also have a user ID, we can be more confident it's a valid session
+        if (storedUserId) {
+          console.log("JWT session confirmed - using localStorage fallback");
         }
-      },
-    }
-  );
+      }
+    },
+  });
 
   // Debug logging to understand the state
   console.log("Auth Debug:", {
@@ -133,8 +131,8 @@ export const AppContextProvider = ({
       toastMessage.type === "SUCCESS"
         ? "success"
         : toastMessage.type === "ERROR"
-        ? "destructive"
-        : "info";
+          ? "destructive"
+          : "info";
 
     toast({
       variant,

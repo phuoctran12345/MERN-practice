@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
+import { useUserStore } from "../stores/userStore";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles } from "lucide-react";
 import { useState } from "react";
@@ -26,6 +27,7 @@ export type SignInFormData = {
 
 const SignIn = () => {
   const { showToast } = useAppContext();
+  const { setCurrentUser } = useUserStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -47,8 +49,33 @@ const SignIn = () => {
           "Welcome back! You have been successfully signed in to your account.",
         type: "SUCCESS",
       });
-      await queryClient.invalidateQueries("validateToken");
-      navigate(location.state?.from?.pathname || "/");
+
+      // Invalidate và fetch lại user info
+      await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+      await queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] });
+
+      // Fetch user info để biết role
+      try {
+        const currentUser = await apiClient.fetchCurrentUser();
+
+        // Lưu user info vào Zustand store
+        setCurrentUser(currentUser);
+
+        // Redirect theo role
+        const roleRedirects: Record<string, string> = {
+          hotel_owner: "/dashboard/owner",
+          manager: "/dashboard/manager",
+          receptionist: "/dashboard/receptionist",
+          customer: location.state?.from?.pathname || "/",
+        };
+
+        const userRole = currentUser.role || "customer";
+        const redirectPath = roleRedirects[userRole] || "/";
+        navigate(redirectPath);
+      } catch (error) {
+        // Nếu không fetch được user, redirect về trang trước hoặc home
+        navigate(location.state?.from?.pathname || "/");
+      }
     },
     onError: (error: Error) => {
       showToast({

@@ -38,10 +38,10 @@ const SearchResultsCard = ({ hotel }: Props) => {
   };
 
   return (
-    <div className="group bg-white rounded-2xl shadow-soft hover:shadow-large transition-all duration-300 border border-gray-100 overflow-hidden h-auto xl:h-[500px] flex">
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-0 w-full h-full">
+    <div className="group bg-white rounded-2xl shadow-soft hover:shadow-large transition-all duration-300 border border-gray-100 overflow-hidden h-auto flex">
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-0 w-full">
         {/* Image Section */}
-        <div className="relative overflow-hidden h-64 xl:h-[500px]">
+        <div className="relative overflow-hidden h-56 md:h-64 lg:h-72">
           <img
             src={hotel.imageUrls[0]}
             className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"

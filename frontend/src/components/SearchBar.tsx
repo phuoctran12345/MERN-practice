@@ -52,6 +52,7 @@ const SearchBar = () => {
           }
         }
 
+        // lấy ra api của BE  và fetch dữ liệu ra
         const apiBaseUrl =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
         const response = await fetch(`${apiBaseUrl}/api/hotels`);

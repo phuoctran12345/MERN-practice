@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import useAppContext from "../hooks/useAppContext";
 import useSearchContext from "../hooks/useSearchContext";
 import SignOutButton from "./SignOutButton";
+import { NeoButton } from "./ui/neo-button";
 import {
   FileText,
   Activity,
@@ -9,6 +10,7 @@ import {
   Building2,
   Calendar,
   LogIn,
+  Menu,
 } from "lucide-react";
 
 const Header = () => {
@@ -30,98 +32,103 @@ const Header = () => {
           🚧 Development Mode - Auth state persists between sessions
         </div>
       )} */}
-      <header className="bg-gradient-to-r from-primary-600 to-primary-700 shadow-large sticky top-0 z-50">
+      <header 
+        className="bg-yellow-50 border-b-4 border-black sticky top-0 z-50"
+        style={{ boxShadow: "0px 4px 0px 0px #000" }}
+      >
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            {/* Logo */}
+            {/* Logo - Neo Brutalism Style */}
             <button
               onClick={handleLogoClick}
-              className="flex items-center space-x-2 group"
+              className="flex items-center space-x-3 group transition-all duration-150 hover:translate-x-1 active:translate-x-0"
             >
-              <div className="bg-white p-2 rounded-lg shadow-soft group-hover:shadow-medium transition-all duration-300">
-                <Building2 className="w-6 h-6 text-primary-600" />
+              <div 
+                className="bg-amber-500 p-3 border-4 border-black flex items-center justify-center"
+                style={{ boxShadow: "4px 4px 0px 0px #000" }}
+              >
+                <Building2 className="w-6 h-6 text-black" strokeWidth={3} />
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight group-hover:text-primary-100 transition-colors">
+              <span 
+                className="text-2xl font-black text-black tracking-tight uppercase"                
+              >
                 MernHolidays
               </span>
             </button>
 
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
+            {/* Navigation - Neo Brutalism Style */}
+            <nav className="hidden md:flex items-center gap-2">
               {isLoggedIn ? (
                 <>
                   {/* Analytics Dashboard Link */}
                   <Link
-                    className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/analytics"
+                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
                   >
-                    <BarChart3 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                    <BarChart3 className="w-4 h-4 mr-2" strokeWidth={3} />
                     Thống Kê
                   </Link>
 
-                  {/* <div className="w-px h-6 bg-white/20 mx-2"></div> */}
+                  {/* My Bookings Link */}
                   <Link
-                    className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/my-bookings"
+                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
                   >
-                    <Calendar className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Đặt Phòng Của Tôi
+                    <Calendar className="w-4 h-4 mr-2" strokeWidth={3} />
+                    Đặt Phòng
                   </Link>
+
+                  {/* My Hotels Link */}
                   <Link
-                    className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/my-hotels"
+                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
                   >
-                    <Building2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Khách Sạn Của Tôi
+                    <Building2 className="w-4 h-4 mr-2" strokeWidth={3} />
+                    Khách Sạn
                   </Link>
 
                   {/* API Documentation Link */}
                   <Link
-                    className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/api-docs"
+                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
                   >
-                    <FileText className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Tài Liệu API
+                    <FileText className="w-4 h-4 mr-2" strokeWidth={3} />
+                    API Docs
                   </Link>
 
                   {/* API Status Link */}
                   <Link
-                    className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/api-status"
+                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
                   >
-                    <Activity className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Trạng Thái API
+                    <Activity className="w-4 h-4 mr-2" strokeWidth={3} />
+                    Status
                   </Link>
 
                   <SignOutButton />
                 </>
               ) : (
-                <Link
-                  to="/sign-in"
-                  className="flex items-center bg-white text-primary-600 px-6 py-2 rounded-lg font-semibold hover:bg-primary-50 hover:shadow-medium transition-all duration-200 group"
-                >
-                  <LogIn className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                  Đăng Nhập
-                </Link>
+                <NeoButton asChild variant="default" size="default">
+                  <Link to="/sign-in" className="flex items-center">
+                    <LogIn className="w-4 h-4 mr-2" strokeWidth={3} />
+                    Đăng Nhập
+                  </Link>
+                </NeoButton>
               )}
             </nav>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Neo Brutalism Style */}
             <div className="md:hidden">
-              <button className="text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+              <button 
+                className="p-3 bg-white border-4 border-black text-black transition-all duration-150 active:translate-x-0 active:translate-y-0"
+                style={{ boxShadow: "4px 4px 0px 0px #000" }}
+              >
+                <Menu className="w-6 h-6" strokeWidth={3} />
               </button>
             </div>
           </div>

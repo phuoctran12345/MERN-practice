@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   Server,
@@ -71,36 +71,32 @@ const ApiStatus = () => {
     isLoading,
     error,
     refetch,
-  } = useQuery<HealthData>(
-    "health",
-    async () => {
+  } = useQuery<HealthData>({
+    queryKey: ["health"],
+    queryFn: async () => {
       const response = await fetch(`${apiBaseUrl}/api/health`);
       if (!response.ok) {
         throw new Error("Health check failed");
       }
       return response.json();
     },
-    {
-      refetchInterval: 30000, // Refresh every 30 seconds
-      retry: 3,
-      retryDelay: 1000,
-    }
-  );
+    refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 3,
+    retryDelay: 1000,
+  });
 
-  const { data: detailedData } = useQuery<DetailedHealthData>(
-    "detailedHealth",
-    async () => {
+  const { data: detailedData } = useQuery<DetailedHealthData>({
+    queryKey: ["detailedHealth"],
+    queryFn: async () => {
       const response = await fetch(`${apiBaseUrl}/api/health/detailed`);
       if (!response.ok) {
         throw new Error("Detailed health check failed");
       }
       return response.json();
     },
-    {
-      enabled: isDetailed,
-      refetchInterval: isDetailed ? 30000 : false,
-    }
-  );
+    enabled: isDetailed,
+    refetchInterval: isDetailed ? 30000 : false,
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -320,11 +316,10 @@ const ApiStatus = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
                   <span
-                    className={`font-medium ${
-                      detailedData.database.status === "connected"
+                    className={`font-medium ${detailedData.database.status === "connected"
                         ? "text-green-600"
                         : "text-red-600"
-                    }`}
+                      }`}
                   >
                     {detailedData.database.status}
                   </span>

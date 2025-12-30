@@ -1,4 +1,4 @@
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import ManageHotelForm from "../forms/ManageHotelForm/ManageHotelForm";
 import useAppContext from "../hooks/useAppContext";
@@ -8,7 +8,8 @@ const AddHotel = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
 
-  const { mutate, isLoading } = useMutation(apiClient.addMyHotel, {
+  const { mutate, isPending } = useMutation({
+    mutationFn: apiClient.addMyHotel,
     onSuccess: () => {
       showToast({
         title: "Hotel Added Successfully",
@@ -34,7 +35,7 @@ const AddHotel = () => {
     mutate(hotelFormData);
   };
 
-  return <ManageHotelForm onSave={handleSave} isLoading={isLoading} />;
+  return <ManageHotelForm onSave={handleSave} isLoading={isPending} />;
 };
 
 export default AddHotel;

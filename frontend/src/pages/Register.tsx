@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
@@ -53,19 +53,19 @@ const Register = () => {
 
   const mutation = useMutationWithLoading(apiClient.register, {
     onSuccess: async () => {
-      showToast({ 
-        title: "Registration Successful", 
+      showToast({
+        title: "Registration Successful",
         description: "Your account has been created successfully! Welcome to MernHolidays.",
-        type: "SUCCESS" 
+        type: "SUCCESS"
       });
-      await queryClient.invalidateQueries("validateToken");
+      await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
       navigate("/");
     },
     onError: (error: Error) => {
-      showToast({ 
-        title: "Registration Failed", 
+      showToast({
+        title: "Registration Failed",
         description: error.message,
-        type: "ERROR" 
+        type: "ERROR"
       });
     },
     loadingMessage: "Creating your account...",

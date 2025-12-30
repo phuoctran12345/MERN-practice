@@ -44,10 +44,10 @@ export const signIn = async (formData: SignInFormData) => {
     console.log("Token validation after login:", validationResult);
 
     // Invalidate and refetch the validateToken query to update the UI
-    queryClient.invalidateQueries("validateToken");
+    queryClient.invalidateQueries({ queryKey: ["validateToken"] });
 
     // Force a refetch to ensure the UI updates
-    await queryClient.refetchQueries("validateToken");
+    await queryClient.refetchQueries({ queryKey: ["validateToken"] });
   } catch (error) {
     console.log("Token validation failed after login, but continuing...");
 

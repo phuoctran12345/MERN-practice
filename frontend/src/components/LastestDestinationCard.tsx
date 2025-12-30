@@ -85,12 +85,12 @@ const LatestDestinationCard = ({ hotel }: Props) => {
               <div className="flex items-center space-x-3 text-white/80">
                 <div className="flex items-center space-x-1">
                   <Users className="w-3 h-3" />
-                  <span className="text-xs">{hotel.adultCount} adults</span>
+                  <span className="text-xs">{hotel.adultCount} người lớn</span>
                 </div>
                 {hotel.childCount > 0 && (
                   <div className="flex items-center space-x-1">
                     <Users className="w-3 h-3" />
-                    <span className="text-xs">{hotel.childCount} children</span>
+                    <span className="text-xs">{hotel.childCount} trẻ em</span>
                   </div>
                 )}
               </div>
@@ -98,7 +98,7 @@ const LatestDestinationCard = ({ hotel }: Props) => {
 
             <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1 hover:bg-white/30 transition-colors">
               <span className="text-sm font-semibold text-white">
-                View Details
+                Xem Chi Tiết
               </span>
             </div>
           </div>

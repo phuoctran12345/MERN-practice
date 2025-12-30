@@ -56,7 +56,7 @@ const Header = () => {
                     to="/analytics"
                   >
                     <BarChart3 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Analytics
+                    Thống Kê
                   </Link>
 
                   {/* <div className="w-px h-6 bg-white/20 mx-2"></div> */}
@@ -65,14 +65,14 @@ const Header = () => {
                     to="/my-bookings"
                   >
                     <Calendar className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    My Bookings
+                    Đặt Phòng Của Tôi
                   </Link>
                   <Link
                     className="flex items-center text-white/90 hover:text-white px-4 py-2 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 group"
                     to="/my-hotels"
                   >
                     <Building2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    My Hotels
+                    Khách Sạn Của Tôi
                   </Link>
 
                   {/* API Documentation Link */}
@@ -81,7 +81,7 @@ const Header = () => {
                     to="/api-docs"
                   >
                     <FileText className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    API Docs
+                    Tài Liệu API
                   </Link>
 
                   {/* API Status Link */}
@@ -90,7 +90,7 @@ const Header = () => {
                     to="/api-status"
                   >
                     <Activity className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    API Status
+                    Trạng Thái API
                   </Link>
 
                   <SignOutButton />
@@ -101,7 +101,7 @@ const Header = () => {
                   className="flex items-center bg-white text-primary-600 px-6 py-2 rounded-lg font-semibold hover:bg-primary-50 hover:shadow-medium transition-all duration-200 group"
                 >
                   <LogIn className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                  Sign In
+                  Đăng Nhập
                 </Link>
               )}
             </nav>

@@ -20,40 +20,40 @@ const Hero = ({ onSearch }: { onSearch: (searchData: any) => void }) => {
           <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-2 mb-8">
             <Star className="w-5 h-5 text-yellow-400 mr-2" />
             <span className="text-white/90 font-medium">
-              Trusted by 10,000+ travelers
+              Được tin tưởng bởi hơn 10,000+ khách hàng
             </span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Find Your Perfect
+            Tìm Kiếm
             <span className="block bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-              Dream Stay
+              Khách Sạn Hoàn Hảo
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-white/90 mb-12 leading-relaxed">
-            Discover amazing hotels, resorts, and accommodations worldwide.
+            Khám phá những khách sạn, resort và chỗ nghỉ tuyệt vời trên toàn thế giới.
             <br className="hidden md:block" />
-            Book with confidence and enjoy unforgettable experiences.
+            Đặt phòng với sự tự tin và tận hưởng những trải nghiệm đáng nhớ.
           </p>
 
           {/* Feature Icons */}
           <div className="flex justify-center items-center space-x-8 mb-12">
             <div className="flex items-center text-white/80">
               <Search className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Smart Search</span>
+              <span className="text-sm font-medium">Tìm Kiếm Thông Minh</span>
             </div>
             <div className="flex items-center text-white/80">
               <MapPin className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Global Destinations</span>
+              <span className="text-sm font-medium">Điểm Đến Toàn Cầu</span>
             </div>
             <div className="flex items-center text-white/80">
               <Calendar className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Flexible Booking</span>
+              <span className="text-sm font-medium">Đặt Phòng Linh Hoạt</span>
             </div>
             <div className="flex items-center text-white/80">
               <Users className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">24/7 Support</span>
+              <span className="text-sm font-medium">Hỗ Trợ 24/7</span>
             </div>
           </div>
         </div>

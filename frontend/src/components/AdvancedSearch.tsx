@@ -7,6 +7,8 @@ import {
   Calendar,
   Users,
 } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import useSearchContext from "../hooks/useSearchContext";
 
 interface AdvancedSearchProps {
@@ -21,6 +23,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const navigate = useNavigate();
   const search = useSearchContext();
   const [showAdvanced, setShowAdvanced] = useState(isExpanded);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
   const [searchData, setSearchData] = useState({
     destination: search.destination,
     checkIn: search.checkIn,
@@ -45,80 +49,86 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     spa: false,
   });
 
+  // Danh sách các tỉnh thành Việt Nam (63 tỉnh/thành phố) - Lấy từ API open.oapi.vn
+  const vietnamProvinces = [
+    "An Giang",
+    "Bà Rịa - Vũng Tàu",
+    "Bắc Giang",
+    "Bắc Kạn",
+    "Bạc Liêu",
+    "Bắc Ninh",
+    "Bến Tre",
+    "Bình Dương",
+    "Bình Phước",
+    "Bình Thuận",
+    "Bình Định",
+    "Cà Mau",
+    "Cần Thơ",
+    "Cao Bằng",
+    "Gia Lai",
+    "Hà Giang",
+    "Hà Nam",
+    "Hà Nội",
+    "Hà Tĩnh",
+    "Hải Dương",
+    "Hải Phòng",
+    "Hậu Giang",
+    "Hồ Chí Minh",
+    "Hoà Bình",
+    "Hưng Yên",
+    "Khánh Hòa",
+    "Kiên Giang",
+    "Kon Tum",
+    "Lai Châu",
+    "Lâm Đồng",
+    "Lạng Sơn",
+    "Lào Cai",
+    "Long An",
+    "Nam Định",
+    "Nghệ An",
+    "Ninh Bình",
+    "Ninh Thuận",
+    "Phú Thọ",
+    "Phú Yên",
+    "Quảng Bình",
+    "Quảng Nam",
+    "Quảng Ngãi",
+    "Quảng Ninh",
+    "Quảng Trị",
+    "Sóc Trăng",
+    "Sơn La",
+    "Tây Ninh",
+    "Thái Bình",
+    "Thái Nguyên",
+    "Thanh Hóa",
+    "Thừa Thiên Huế",
+    "Tiền Giang",
+    "Trà Vinh",
+    "Tuyên Quang",
+    "Vĩnh Long",
+    "Vĩnh Phúc",
+    "Yên Bái",
+    "Đà Nẵng",
+    "Đắk Lắk",
+    "Đắk Nông",
+    "Điện Biên",
+    "Đồng Nai",
+    "Đồng Tháp",
+    // Các điểm du lịch phổ biến (bổ sung)
+    "Nha Trang",
+    "Phú Quốc",
+    "Hội An",
+    "Sapa",
+    "Mũi Né",
+    "Đà Lạt",
+    "Vũng Tàu",
+    "Huế",
+  ];
+
   // Dropdown functionality for destination
   const [showDropdown, setShowDropdown] = useState(false);
-  const [places, setPlaces] = useState<string[]>([]);
+  const [places] = useState<string[]>(vietnamProvinces);
   const [filteredPlaces, setFilteredPlaces] = useState<string[]>([]);
-  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
-  const hasFetchedRef = useRef(false);
-
-  // Fetch hotel places on mount
-  useEffect(() => {
-    // Prevent multiple API calls - use a ref to track if we've already fetched
-    if (isLoadingPlaces || hasFetchedRef.current) return;
-
-    const fetchPlaces = async () => {
-      try {
-        setIsLoadingPlaces(true);
-        hasFetchedRef.current = true;
-
-        // Check if we have cached places data
-        const cachedPlaces = localStorage.getItem("hotelPlaces");
-        if (cachedPlaces) {
-          const parsedPlaces = JSON.parse(cachedPlaces);
-          const cacheTime = localStorage.getItem("hotelPlacesTime");
-          const now = Date.now();
-
-          // Cache is valid for 5 minutes
-          if (cacheTime && now - parseInt(cacheTime) < 5 * 60 * 1000) {
-            setPlaces(parsedPlaces);
-            setIsLoadingPlaces(false);
-            return;
-          }
-        }
-
-        const apiBaseUrl =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
-        const response = await fetch(`${apiBaseUrl}/api/hotels`);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: { city?: string; place?: string; name?: string }[] =
-          await response.json();
-        const uniquePlaces: string[] = Array.from(
-          new Set(
-            data
-              .map((hotel) => hotel.city || hotel.place || hotel.name)
-              .filter(
-                (place): place is string =>
-                  typeof place === "string" && place.length > 0
-              )
-          )
-        );
-
-        // Cache the places data
-        localStorage.setItem("hotelPlaces", JSON.stringify(uniquePlaces));
-        localStorage.setItem("hotelPlacesTime", Date.now().toString());
-
-        setPlaces(uniquePlaces);
-      } catch (error) {
-        console.error("Error fetching hotels:", error);
-        setPlaces([]);
-      } finally {
-        setIsLoadingPlaces(false);
-      }
-    };
-
-    fetchPlaces();
-  }, []); // Remove all dependencies to run only once on mount
-
-  // Clear dropdown state when component mounts
-  useEffect(() => {
-    setShowDropdown(false);
-    setFilteredPlaces([]);
-  }, []);
 
   // Filter places as user types
   useEffect(() => {
@@ -130,8 +140,98 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       setShowDropdown(filtered.length > 0);
     } else {
       setShowDropdown(false);
+      setFilteredPlaces([]);
     }
   }, [searchData.destination, places]);
+
+  // Đóng date picker khi click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        datePickerRef.current &&
+        !datePickerRef.current.contains(event.target as Node)
+      ) {
+        setShowDatePicker(false);
+      }
+    };
+
+    if (showDatePicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDatePicker]);
+
+  // Format date để hiển thị: "29 thg 12 2025"
+  const formatDateDisplay = (date: Date): string => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    const monthNames = [
+      "thg 1",
+      "thg 2",
+      "thg 3",
+      "thg 4",
+      "thg 5",
+      "thg 6",
+      "thg 7",
+      "thg 8",
+      "thg 9",
+      "thg 10",
+      "thg 11",
+      "thg 12",
+    ];
+    return `${day} ${monthNames[month - 1]} ${year}`;
+  };
+
+  // Tính số ngày ở (bao gồm cả check-in và check-out)
+  // Ví dụ: 11/3 đến 13/3 = 3 ngày (11, 12, 13)
+  const calculateStayDays = (checkIn: Date, checkOut: Date): number => {
+    if (!checkIn || !checkOut) return 0;
+    const diffTime = checkOut.getTime() - checkIn.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Số ngày ở = số ngày chênh lệch + 1 (bao gồm cả ngày check-in và check-out)
+    return diffDays >= 0 ? diffDays + 1 : 0;
+  };
+
+  // Format date range để hiển thị: "29 thg 12 2025 - 30 thg 12 2025"
+  const formatDateRange = (): string => {
+    const checkInStr = formatDateDisplay(searchData.checkIn);
+    const checkOutStr = formatDateDisplay(searchData.checkOut);
+    return `${checkInStr} - ${checkOutStr}`;
+  };
+
+  // Xử lý khi chọn date range
+  const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    
+    if (start) {
+      handleInputChange("checkIn", start);
+      
+      // Nếu chọn start date sau end date hiện tại, reset end date
+      if (end && start >= end) {
+        // Set end date = start date + 1 ngày
+        const nextDay = new Date(start);
+        nextDay.setDate(nextDay.getDate() + 1);
+        handleInputChange("checkOut", nextDay);
+      }
+    }
+    
+    if (end) {
+      // Validate: end date phải sau start date
+      if (start && end <= start) {
+        // Nếu end <= start, set end = start + 1 ngày
+        const nextDay = new Date(start);
+        nextDay.setDate(nextDay.getDate() + 1);
+        handleInputChange("checkOut", nextDay);
+      } else {
+        handleInputChange("checkOut", end);
+      }
+      setShowDatePicker(false); // Đóng picker sau khi chọn xong
+    }
+  };
 
   const hotelTypes = [
     "Hotel",
@@ -145,14 +245,14 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   ];
 
   const facilityOptions = [
-    { id: "wifi", label: "Free WiFi", icon: "📶" },
-    { id: "parking", label: "Free Parking", icon: "🚗" },
-    { id: "pool", label: "Swimming Pool", icon: "🏊" },
-    { id: "gym", label: "Fitness Center", icon: "💪" },
+    { id: "wifi", label: "WiFi Miễn Phí", icon: "📶" },
+    { id: "parking", label: "Đỗ Xe Miễn Phí", icon: "🚗" },
+    { id: "pool", label: "Hồ Bơi", icon: "🏊" },
+    { id: "gym", label: "Phòng Gym", icon: "💪" },
     { id: "spa", label: "Spa", icon: "🧖" },
-    { id: "breakfast", label: "Free Breakfast", icon: "🍳" },
-    { id: "instantBooking", label: "Instant Booking", icon: "⚡" },
-    { id: "freeCancellation", label: "Free Cancellation", icon: "✅" },
+    { id: "breakfast", label: "Bữa Sáng Miễn Phí", icon: "🍳" },
+    { id: "instantBooking", label: "Đặt Phòng Ngay", icon: "⚡" },
+    { id: "freeCancellation", label: "Hủy Miễn Phí", icon: "✅" },
   ];
 
   const handleInputChange = (field: string, value: any) => {
@@ -350,48 +450,62 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   // };
 
   const popularDestinations = [
-    "New York",
-    "London",
-    "Paris",
-    "Tokyo",
-    "Sydney",
-    "Dubai",
-    "Singapore",
-    "Barcelona",
+    "Hà Nội",
+    "Hồ Chí Minh",
+    "Đà Nẵng",
+    "Nha Trang",
+    "Phú Quốc",
+    "Hội An",
+    "Sapa",
+    "Huế",
   ];
 
   return (
     <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-large p-8 max-w-6xl mx-auto border border-white/20">
       {/* Basic Search */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-8">
         {/* Destination */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700 flex items-center">
             <MapPin className="w-4 h-4 mr-2 text-primary-600" />
-            Destination
+            Điểm Đến
           </label>
           <div className="relative">
             <input
               type="text"
-              placeholder="Where are you going?"
+              placeholder="Bạn muốn đi đâu?"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
               value={searchData.destination}
               onChange={(e) => handleInputChange("destination", e.target.value)}
-              onFocus={() => setShowDropdown(filteredPlaces.length > 0)}
-              onBlur={() => setShowDropdown(false)}
+              onFocus={() => {
+                if (searchData.destination.length > 0) {
+                  setShowDropdown(filteredPlaces.length > 0);
+                } else {
+                  // Hiển thị tất cả tỉnh thành khi focus vào input trống
+                  setFilteredPlaces(places);
+                  setShowDropdown(true);
+                }
+              }}
+              onBlur={() => {
+                // Delay để cho phép click vào dropdown item
+                setTimeout(() => setShowDropdown(false), 200);
+              }}
             />
             <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            {showDropdown && (
-              <ul className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+            {showDropdown && filteredPlaces.length > 0 && (
+              <ul className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto mt-1">
                 {filteredPlaces.map((place) => (
                   <li
                     key={place}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm border-b border-gray-100 last:border-b-0"
-                    onMouseDown={() => {
+                    className="px-4 py-2 cursor-pointer hover:bg-primary-50 hover:text-primary-600 text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
                       handleInputChange("destination", place);
                       setShowDropdown(false);
+                      setFilteredPlaces([]);
                     }}
                   >
+                    <MapPin className="w-4 h-4 inline mr-2 text-primary-600" />
                     {place}
                   </li>
                 ))}
@@ -400,41 +514,198 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           </div>
         </div>
 
-        {/* Check-in Date */}
+        {/* Date Range Picker - Thiết kế giống hình ảnh */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700 flex items-center">
             <Calendar className="w-4 h-4 mr-2 text-primary-600" />
-            Check-in
+            Ngày nhận phòng và trả phòng
           </label>
-          <div className="relative">
-            <input
-              type="date"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-              value={searchData.checkIn.toISOString().split("T")[0]}
-              onChange={(e) =>
-                handleInputChange("checkIn", new Date(e.target.value))
-              }
-            />
-            <Calendar className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+          <div className="relative" ref={datePickerRef}>
+            {/* Input field hiển thị date range */}
+            <div
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg cursor-pointer hover:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all duration-200 bg-white flex items-center"
+            >
+              <Calendar className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
+              <div className="flex-1">
+                <span className="text-gray-700 block">
+                  {formatDateDisplay(searchData.checkIn)} - {formatDateDisplay(searchData.checkOut)}
+                </span>
+                {calculateStayDays(searchData.checkIn, searchData.checkOut) > 0 && (
+                  <span className="text-xs text-primary-600 font-medium mt-1 block">
+                    {calculateStayDays(searchData.checkIn, searchData.checkOut)} ngày
+                  </span>
+                )}
+              </div>
+              <Calendar className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Date Picker Modal */}
+            {showDatePicker && (
+              <div className="absolute top-full left-0 lg:left-1/2 lg:transform lg:-translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-4 lg:p-6 w-[95vw] lg:w-[720px] max-w-[95vw]">
+                {/* Header hiển thị check-in và check-out */}
+                <div className="mb-6 pb-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Ngày Ở</h3>
+                  <div className="grid grid-cols-2 gap-6 mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2">Nhận phòng</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {searchData.checkIn.toLocaleDateString("vi-VN", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2">Trả phòng</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {searchData.checkOut.toLocaleDateString("vi-VN", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
           </div>
         </div>
 
-        {/* Check-out Date */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700 flex items-center">
-            <Calendar className="w-4 h-4 mr-2 text-primary-600" />
-            Check-out
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-              value={searchData.checkOut.toISOString().split("T")[0]}
-              onChange={(e) =>
-                handleInputChange("checkOut", new Date(e.target.value))
-              }
-            />
-            <Calendar className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  {/* Hiển thị số ngày ở */}
+                  {calculateStayDays(searchData.checkIn, searchData.checkOut) > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-center">
+                        <span className="text-sm text-gray-600">
+                          Thời gian ở:{" "}
+                          <span className="font-semibold text-primary-600 text-base">
+                            {calculateStayDays(searchData.checkIn, searchData.checkOut)} ngày
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date Range Picker với 2 calendars - Căn giữa */}
+                <div className="flex justify-center">
+                  <DatePicker
+                    selected={searchData.checkIn}
+                    onChange={handleDateRangeChange}
+                    startDate={searchData.checkIn}
+                    endDate={searchData.checkOut}
+                    selectsRange
+                    inline
+                    monthsShown={2}
+                    minDate={new Date()}
+                    className="custom-datepicker"
+                    dateFormat="dd/MM/yyyy"
+                  />
+                </div>
+
+                {/* Custom CSS cho date picker */}
+                <style>{`
+                  .custom-datepicker {
+                    display: flex;
+                    justify-content: center;
+                  }
+                  .custom-datepicker .react-datepicker {
+                    border: none;
+                    font-family: inherit;
+                    box-shadow: none;
+                  }
+                  .custom-datepicker .react-datepicker__month-container {
+                    margin: 0 8px;
+                    width: 100%;
+                    min-width: 260px;
+                  }
+                  @media (max-width: 768px) {
+                    .custom-datepicker .react-datepicker__month-container {
+                      margin: 0 4px;
+                      min-width: 240px;
+                    }
+                  }
+                  .custom-datepicker .react-datepicker__header {
+                    background-color: white;
+                    border-bottom: 1px solid #e5e7eb;
+                    padding-top: 16px;
+                    padding-bottom: 8px;
+                  }
+                  .custom-datepicker .react-datepicker__current-month {
+                    font-weight: 600;
+                    color: #111827;
+                    margin-bottom: 12px;
+                    font-size: 14px;
+                  }
+                  .custom-datepicker .react-datepicker__day-names {
+                    display: flex;
+                    justify-content: space-around;
+                    margin-bottom: 4px;
+                  }
+                  .custom-datepicker .react-datepicker__day-name {
+                    color: #6b7280;
+                    font-weight: 500;
+                    width: 40px;
+                    line-height: 40px;
+                    font-size: 12px;
+                    margin: 0;
+                  }
+                  .custom-datepicker .react-datepicker__week {
+                    display: flex;
+                    justify-content: space-around;
+                    margin: 2px 0;
+                  }
+                  .custom-datepicker .react-datepicker__day {
+                    width: 40px;
+                    height: 40px;
+                    line-height: 40px;
+                    margin: 0;
+                    border-radius: 8px;
+                    font-size: 14px;
+                  }
+                  .custom-datepicker .react-datepicker__day--weekend {
+                    color: #dc2626;
+                  }
+                  .custom-datepicker .react-datepicker__day:hover {
+                    background-color: #f3f4f6;
+                    border-radius: 8px;
+                  }
+                  .custom-datepicker .react-datepicker__day--selected,
+                  .custom-datepicker .react-datepicker__day--in-range {
+                    background-color: #3b82f6;
+                    color: white;
+                    border-radius: 8px;
+                  }
+                  .custom-datepicker .react-datepicker__day--in-selecting-range {
+                    background-color: #dbeafe;
+                    color: #1e40af;
+                    border-radius: 8px;
+                  }
+                  .custom-datepicker .react-datepicker__day--range-start,
+                  .custom-datepicker .react-datepicker__day--range-end {
+                    background-color: #2563eb;
+                    color: white;
+                    font-weight: 600;
+                    border-radius: 8px;
+                  }
+                  .custom-datepicker .react-datepicker__navigation {
+                    top: 16px;
+                    width: 32px;
+                    height: 32px;
+                  }
+                  .custom-datepicker .react-datepicker__navigation:hover {
+                    background-color: #f3f4f6;
+                    border-radius: 6px;
+                  }
+                  .custom-datepicker .react-datepicker__navigation-icon::before {
+                    border-color: #6b7280;
+                    border-width: 2px 2px 0 0;
+                  }
+                  .custom-datepicker .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+                    border-color: #111827;
+                  }
+                `}</style>
+              </div>
+            )}
           </div>
         </div>
 
@@ -442,7 +713,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700 flex items-center">
             <Users className="w-4 h-4 mr-2 text-primary-600" />
-            Guests
+            Số Khách
           </label>
           <div className="relative">
             <select
@@ -454,13 +725,13 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 handleInputChange("childCount", parseInt(children));
               }}
             >
-              <option value="1 adults, 0 children">1 adult</option>
-              <option value="2 adults, 0 children">2 adults</option>
-              <option value="1 adults, 1 children">1 adult, 1 child</option>
-              <option value="2 adults, 1 children">2 adults, 1 child</option>
-              <option value="2 adults, 2 children">2 adults, 2 children</option>
-              <option value="3 adults, 0 children">3 adults</option>
-              <option value="4 adults, 0 children">4 adults</option>
+              <option value="1 adults, 0 children">1 người lớn</option>
+              <option value="2 adults, 0 children">2 người lớn</option>
+              <option value="1 adults, 1 children">1 người lớn, 1 trẻ em</option>
+              <option value="2 adults, 1 children">2 người lớn, 1 trẻ em</option>
+              <option value="2 adults, 2 children">2 người lớn, 2 trẻ em</option>
+              <option value="3 adults, 0 children">3 người lớn</option>
+              <option value="4 adults, 0 children">4 người lớn</option>
             </select>
             <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
           </div>
@@ -474,7 +745,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           className="flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
         >
           <Filter className="w-4 h-4 mr-2" />
-          Advanced Filters
+          Bộ Lọc Nâng Cao
         </button>
 
         <button
@@ -482,7 +753,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           className="flex items-center bg-gradient-to-r from-primary-600 to-primary-700 text-white px-8 py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-primary-800 transform hover:scale-105 transition-all duration-200 shadow-medium hover:shadow-large"
         >
           <SearchIcon className="w-4 h-4 mr-2" />
-          Search Hotels
+          Tìm Kiếm Khách Sạn
         </button>
       </div>
 
@@ -493,12 +764,12 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price Range
+                Khoảng Giá
               </label>
               <div className="flex space-x-2">
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder="Tối thiểu"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   value={searchData.minPrice}
                   onChange={(e) =>
@@ -508,7 +779,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <span className="flex items-center text-gray-500">-</span>
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder="Tối đa"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   value={searchData.maxPrice}
                   onChange={(e) =>
@@ -521,7 +792,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             {/* Star Rating */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Star Rating
+                Hạng Sao
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -530,25 +801,25 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   handleInputChange("starRating", e.target.value)
                 }
               >
-                <option value="">Any Rating</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4+ Stars</option>
-                <option value="3">3+ Stars</option>
-                <option value="2">2+ Stars</option>
+                <option value="">Mọi Hạng</option>
+                <option value="5">5 Sao</option>
+                <option value="4">4+ Sao</option>
+                <option value="3">3+ Sao</option>
+                <option value="2">2+ Sao</option>
               </select>
             </div>
 
             {/* Hotel Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hotel Type
+                Loại Khách Sạn
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 value={searchData.hotelType}
                 onChange={(e) => handleInputChange("hotelType", e.target.value)}
               >
-                <option value="">Any Type</option>
+                <option value="">Mọi Loại</option>
                 {hotelTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -561,7 +832,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           {/* Facilities */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Facilities
+              Tiện Nghi
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {facilityOptions.map((facility) => (
@@ -587,24 +858,24 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
+                Sắp Xếp Theo
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 value={searchData.sortBy}
                 onChange={(e) => handleInputChange("sortBy", e.target.value)}
               >
-                <option value="relevance">Relevance</option>
-                <option value="priceLow">Price: Low to High</option>
-                <option value="priceHigh">Price: High to Low</option>
-                <option value="rating">Rating</option>
-                <option value="distance">Distance</option>
+                <option value="relevance">Độ Liên Quan</option>
+                <option value="priceLow">Giá: Thấp đến Cao</option>
+                <option value="priceHigh">Giá: Cao đến Thấp</option>
+                <option value="rating">Đánh Giá</option>
+                <option value="distance">Khoảng Cách</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Radius (km)
+                Bán Kính Tìm Kiếm (km)
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -624,7 +895,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       {/* Quick Search Destinations */}
       <div className="border-t border-gray-200 pt-6">
         <h3 className="text-sm font-medium text-gray-700 mb-3">
-          Popular Destinations
+          Điểm Đến Phổ Biến
         </h3>
         <div className="flex flex-wrap gap-2">
           {popularDestinations.map((destination) => (

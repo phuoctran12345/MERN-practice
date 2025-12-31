@@ -22,6 +22,9 @@ import Home from "./pages/Home";
 import ApiDocs from "./pages/ApiDocs";
 import ApiStatus from "./pages/ApiStatus";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import DashboardLayout from "./layouts/DashboardLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import OwnerDashboardIndex from "./pages/dashboard/owner";
 
 const App = () => {
   // Lấy giá trị isLoggedIn từ Context để kiểm tra người dùng đã đăng nhập hay chưa
@@ -31,7 +34,7 @@ const App = () => {
     <Router>
       {/* Luôn cuộn lên đầu trang mỗi khi route thay đổi */}
       <ScrollToTop />
-      
+
       <Routes>
         {/* --- CÁC ROUTE CÔNG KHAI (Ai cũng xem được) --- */}
         <Route
@@ -68,7 +71,7 @@ const App = () => {
             </Layout>
           }
         />
-        
+
         <Route
           path="/api-status"
           element={
@@ -149,6 +152,20 @@ const App = () => {
             />
           </>
         )}
+
+        {/* --- OWNER DASHBOARD ROUTES --- */}
+        {/* Tất cả routes owner dashboard đều dùng chung component gốc OwnerDashboardIndex */}
+        {/* Component này sẽ tự động điều hướng đến section tương ứng dựa trên URL */}
+        <Route
+          path="/dashboard/owner/*"
+          element={
+            <ProtectedRoute requireAuth allowedRoles={["hotel_owner"]}>
+              <DashboardLayout>
+                <OwnerDashboardIndex />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
 
         {/* --- XỬ LÝ KHI KHÔNG TÌM THẤY TRANG --- 
             Nếu URL không khớp với bất kỳ route nào ở trên, chuyển hướng về trang chủ */}

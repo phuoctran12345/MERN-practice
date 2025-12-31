@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import "dotenv/config";
 import mongoose from "mongoose";
+import { Server as SocketIOServer } from "socket.io";
+import { createServer } from "http";
 // Express routes imports
 import userRoutes from "./express/routes/users";
 import authRoutes from "./express/routes/auth";
@@ -137,9 +139,16 @@ const allowedOrigins = [
 ].filter((origin): origin is string => Boolean(origin));
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin, callback) => { 
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
+
+      // In development, allow all localhost origins
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+          return callback(null, true);
+        }
+      }
 
       // Allow all Netlify preview URLs
       if (origin.includes("netlify.app")) {
@@ -159,7 +168,7 @@ app.use(
     },
     credentials: true,
     optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],  // các phương thức HTTP được phép 
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -176,6 +185,13 @@ app.options(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
+      // In development, allow all localhost origins
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) { //
+        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+          return callback(null, true);
+        }
+      }
+
       // Allow all Netlify preview URLs
       if (origin.includes("netlify.app")) {
         return callback(null, true);
@@ -189,7 +205,7 @@ app.options(
     },
     credentials: true,
     optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],// các phương thức HTTP được phép 
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -244,10 +260,59 @@ app.use(
 // Dynamic Port Configuration (for Render and local development)
 const PORT = process.env.PORT || 7002;
 
-// Start Express server
-const server = app.listen(PORT, () => {
+// SETUp socket.io cho toàn bộ server
+// Create HTTP server from Express app
+const httpServer = createServer(app);
+
+// Setup Socket.IO server
+const allowedSocketOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5174",
+  "http://localhost:5173"
+].filter((origin): origin is string => Boolean(origin));
+
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps)
+      if (!origin) return callback(null, true);
+      
+      // In development, allow all localhost origins
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+          return callback(null, true);
+        }
+      }
+      
+      // Check if origin is in allowed list
+      if (allowedSocketOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  },
+});
+
+// Socket.IO connection handling
+io.on("connection", (socket) => {
+  console.log(`✅ Socket.IO client connected: ${socket.id}`);
+
+  socket.on("disconnect", () => {
+    console.log(`❌ Socket.IO client disconnected: ${socket.id}`);
+  });
+});
+
+// Set io instance để dùng trong controllers
+import { setIO } from "./shared/socket";
+setIO(io);
+
+// Start HTTP server (includes Express + Socket.IO)
+httpServer.listen(PORT, () => {
   console.log("🚀 ============================================");
   console.log(`✅ Express Server running on port ${PORT}`);
+  console.log(`✅ Socket.IO Server running on port ${PORT}`);
   console.log(`📦 Express routes: /api/*`);
   console.log(`🆕 V2 routes: /api/v2/*`);
   console.log(`🌐 Local: http://localhost:${PORT}`);
@@ -261,8 +326,13 @@ const gracefulShutdown = async (signal: string) => {
   console.log(`\n⚠️  ${signal} received. Starting graceful shutdown...`);
 
   try {
-    // Close Express server
-    server.close(async () => {
+    // Close Socket.IO server
+    io.close(() => {
+      console.log("🔒 Socket.IO server closed");
+    });
+
+    // Close HTTP server (includes Express)
+    httpServer.close(async () => {
       console.log("🔒 HTTP server closed");
 
       // Close MongoDB connection

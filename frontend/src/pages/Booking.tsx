@@ -5,7 +5,8 @@ import useSearchContext from "../hooks/useSearchContext";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BookingDetailsSummary from "../components/BookingDetailsSummary";
-import { Elements } from "@stripe/react-stripe-js";
+// Stripe đã được xóa - không dùng nữa
+// import { Elements } from "@stripe/react-stripe-js";
 import useAppContext from "../hooks/useAppContext";
 import {
   Card,
@@ -17,7 +18,8 @@ import { Badge } from "../components/ui/badge";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 
 const Booking = () => {
-  const { stripePromise } = useAppContext();
+  // Stripe đã được xóa - không dùng nữa
+  // const { stripePromise } = useAppContext();
   const search = useSearchContext();
   const { hotelId } = useParams();
 
@@ -178,18 +180,19 @@ const Booking = () => {
             ) : currentUser && paymentIntentData ? (
               <Card className="shadow-lg border-0 bg-white">
                 <CardContent className="p-0">
-                  <Elements
+                  {/* Stripe đã được xóa - dùng PayOS thay thế */}
+                  {/* <Elements
                     stripe={stripePromise}
                     options={{
                       clientSecret: paymentIntentData.clientSecret,
                     }}
                     key={paymentIntentData.clientSecret}
-                  >
+                  > */}
                     <BookingForm
                       currentUser={currentUser}
                       paymentIntent={paymentIntentData}
                     />
-                  </Elements>
+                  {/* </Elements> */}
                 </CardContent>
               </Card>
             ) : (

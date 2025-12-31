@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import User from "../../models/user";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
+import { getIO } from "../../shared/socket";
 
 // ============================================
 // POST /api/v2/employees
@@ -68,6 +69,18 @@ export const createEmployee = async (req: Request, res: Response) => {
     // Remove password from response
     const employeeResponse = employee.toObject();
     delete employeeResponse.password;
+
+    // Emit socket event để frontend re-render
+    try {
+      const io = getIO();
+      io.emit("employee:created", {
+        employee: employeeResponse,
+        message: "Employee created successfully",
+      });
+      console.log("📡 Socket.IO: Emitted employee:created event");
+    } catch (error) {
+      console.warn("⚠️  Socket.IO not available:", error);
+    }
 
     res.status(201).json({
       message: "Tạo nhân viên thành công",
@@ -255,6 +268,18 @@ export const updateEmployee = async (req: Request, res: Response) => {
       });
     }
 
+    // Emit socket event
+    try {
+      const io = getIO();
+      io.emit("employee:updated", {
+        employee: updatedEmployee,
+        message: "Employee updated successfully",
+      });
+      console.log("📡 Socket.IO: Emitted employee:updated event");
+    } catch (error) {
+      console.warn("⚠️  Socket.IO not available:", error);
+    }
+
     res.status(200).json({
       message: "Cập nhật nhân viên thành công",
       employee: updatedEmployee,
@@ -291,10 +316,24 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     }
 
     // Thực tế không xóa, chỉ deactivate
-    await User.findByIdAndUpdate(id, { 
-      isActive: false,
-      updatedAt: new Date()
-    });
+    const deactivatedEmployee = await User.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date() },
+      { new: true }
+    ).select("-password");
+
+    // Emit socket event
+    try {
+      const io = getIO();
+      io.emit("employee:deleted", {
+        employeeId: id,
+        employee: deactivatedEmployee,
+        message: "Employee deactivated successfully",
+      });
+      console.log("📡 Socket.IO: Emitted employee:deleted event");
+    } catch (error) {
+      console.warn("⚠️  Socket.IO not available:", error);
+    }
 
     res.status(200).json({
       message: `Vô hiệu hóa nhân viên với ID ${id} thành công`,
@@ -383,6 +422,18 @@ export const activateEmployee = async (req: Request, res: Response) => {
       return res.status(404).json({ 
         message: `Không tìm thấy nhân viên với ID ${id}` 
       });
+    }
+
+    // Emit socket event
+    try {
+      const io = getIO();
+      io.emit("employee:activated", {
+        employee: updatedEmployee,
+        message: "Employee activated successfully",
+      });
+      console.log("📡 Socket.IO: Emitted employee:activated event");
+    } catch (error) {
+      console.warn("⚠️  Socket.IO not available:", error);
     }
 
     res.status(200).json({

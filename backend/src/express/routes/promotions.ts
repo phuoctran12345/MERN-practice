@@ -2,17 +2,17 @@ import express from "express";
 import verifyToken from "../middleware/auth";
 import { roleCheck } from "../middleware/roleCheck";
 import * as promotionController from "../controllers/promotion.controller";
-import { body, param, query } from "express-validator";
+import { body, param, query } from "express-validator";   // validate dữ liệu input từ client
 
 const router = express.Router();
 
 // ============================================
 // POST /api/v2/promotions
-// Tạo khuyến mãi mới (Manager)
+// Tạo khuyến mãi mới (Manager hoặc Owner)
 router.post(
   "/",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     body("name").notEmpty().withMessage("Tên khuyến mãi là bắt buộc"),
     body("description").notEmpty().withMessage("Mô tả là bắt buộc"),
@@ -29,22 +29,22 @@ router.post(
     body("maxUsage").optional().isInt({ min: 1 }),
     body("isActive").optional().isBoolean(),
   ],
-  promotionController.createPromotion
+  promotionController.createPromotion // tại đây bắn một phát về BE
 );
 
 // ============================================
 // GET /api/v2/promotions
-// Lấy danh sách khuyến mãi với filters (Manager)
+// Lấy danh sách khuyến mãi với filters (Manager hoặc Owner)
 router.get(
   "/",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     query("hotelId").optional().isString(),
     query("isActive").optional().isBoolean(),
     query("currentDate").optional().isISO8601(),
   ],
-  promotionController.getAllPromotions
+  promotionController.getAllPromotions //GỌI lên FE
 );
 
 // ============================================
@@ -55,7 +55,7 @@ router.get(
   [
     query("hotelId").optional().isString(),
   ],
-  promotionController.getActivePromotions
+  promotionController.getActivePromotions //GỌI lên FE
 );
 
 // ============================================
@@ -69,11 +69,11 @@ router.get(
 
 // ============================================
 // PATCH /api/v2/promotions/:id
-// Cập nhật khuyến mãi (Manager)
+// Cập nhật khuyến mãi (Manager hoặc Owner)
 router.patch(
   "/:id",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     param("id").notEmpty().withMessage("Promotion ID là bắt buộc"),
     body("name").optional().notEmpty(),

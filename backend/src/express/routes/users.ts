@@ -3,6 +3,7 @@ import User from "../../models/user";
 import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
 import verifyToken from "../middleware/auth";
+import { roleCheck } from "../middleware/roleCheck"; // viết ra để check role
 import * as userController from "../controllers/user.controller";
 
 
@@ -50,6 +51,51 @@ router.post(
   },
 
   userController.registerUser
+);
+
+//======================================================
+// GET /api/users - Lấy danh sách tất cả users (Owner only)
+router.get(
+  "/",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  userController.getAllUsers
+);
+
+//======================================================
+// GET /api/users/:id - Lấy thông tin một user cụ thể (Owner only)
+router.get(
+  "/:id",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  userController.getUserById
+);
+
+//======================================================
+// PATCH /api/users/:id - Cập nhật user (Owner only)
+router.patch(
+  "/:id",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  userController.updateUser
+);
+
+//======================================================
+// DELETE /api/users/:id - Soft delete user (Owner only)
+router.delete(
+  "/:id",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  userController.deleteUser
+);
+
+//======================================================
+// PATCH /api/users/:id/activate - Kích hoạt lại user (Owner only)
+router.patch(
+  "/:id/activate",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  userController.activateUser
 );
 
 export default router;

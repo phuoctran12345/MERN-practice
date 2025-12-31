@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
-import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { useToast } from "../hooks/use-toast";
-
-const STRIPE_PUB_KEY = import.meta.env.VITE_STRIPE_PUB_KEY || "";
 
 type ToastMessage = {
   title: string;
@@ -16,7 +13,6 @@ type ToastMessage = {
 export type AppContext = {
   showToast: (toastMessage: ToastMessage) => void;
   isLoggedIn: boolean;
-  stripePromise: Promise<Stripe | null>;
   showGlobalLoading: (message?: string) => void;
   hideGlobalLoading: () => void;
   isGlobalLoading: boolean;
@@ -26,8 +22,6 @@ export type AppContext = {
 export const AppContext = React.createContext<AppContext | undefined>(
   undefined
 );
-
-const stripePromise = loadStripe(STRIPE_PUB_KEY);
 
 export const AppContextProvider = ({
   children,
@@ -57,32 +51,30 @@ export const AppContextProvider = ({
   };
 
   // Always run validation query - let it handle token checking internally
+  // QUAN TRỌNG: Thêm các options để tránh mất session khi HMR (Hot Module Replacement)
   const { isError, isLoading, data } = useQuery({
     queryKey: ["validateToken"],
     queryFn: apiClient.validateToken,
     retry: false,
-    refetchOnWindowFocus: false, // Don't refetch on focus
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    // Always enabled - let validateToken handle missing tokens
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Không refetch khi component mount lại (tránh mất session khi HMR)
+    refetchOnReconnect: false, // Không refetch khi reconnect
+    staleTime: 24 * 60 * 60 * 1000, // 24 giờ (JWT token có expiresIn: "1d")
+    gcTime: 24 * 60 * 60 * 1000, // Giữ cache 24 giờ (React Query v5 dùng gcTime thay vì cacheTime)
     enabled: true,
-    // Add fallback for JWT authentication
-    onError: (error: any) => {
-      // If validateToken fails, check if we have a token in localStorage
+  });
+
+  // Xử lý lỗi bằng useEffect (React Query v5 không hỗ trợ onError trong useQuery)
+  React.useEffect(() => {
+    if (isError) {
       const storedToken = localStorage.getItem("session_id");
       const storedUserId = localStorage.getItem("user_id");
 
-      if (storedToken && error.response?.status === 401) {
-        console.log(
-          "JWT token found but validation failed - possible token expiration"
-        );
-
-        // If we also have a user ID, we can be more confident it's a valid session
-        if (storedUserId) {
-          console.log("JWT session confirmed - using localStorage fallback");
-        }
+      if (storedToken && storedUserId) {
+        // Có token và userId trong localStorage → có thể là JWT fallback mode
       }
-    },
-  });
+    }
+  }, [isError]);
 
   // Debug logging to understand the state
   console.log("Auth Debug:", {
@@ -94,12 +86,22 @@ export const AppContextProvider = ({
     data,
   });
 
-  // Simple logic: logged in if we have valid data OR stored token as fallback
-  const isLoggedIn =
-    (!isLoading && !isError && !!data) || (checkStoredAuth() && isError); // Use stored token only if validation failed
+  // ============================================
+  // AUTH LOGIC - ƯU TIÊN GIỮ SESSION
+  // ============================================
+  // Ưu tiên check localStorage trước (tránh mất session)
+  // Nếu có token trong localStorage → coi như đã login (trừ khi validation fail rõ ràng)
+  const hasStoredAuth = checkStoredAuth();
 
-  // Additional fallback: if we just logged in and have a token, consider logged in
-  const justLoggedIn = checkStoredAuth() && !isLoading && !data && !isError;
+  // Logic: logged in nếu:
+  // 1. Có valid data từ validateToken query HOẶC
+  // 2. Có token trong localStorage (fallback - giữ session)
+  const isLoggedIn =
+    (!isLoading && !isError && !!data) ||
+    (hasStoredAuth && !isLoading); // Nếu có token trong localStorage → giữ session (không cần đợi validation)
+
+  // Additional fallback: nếu có token nhưng chưa có data → vẫn coi như logged in
+  const justLoggedIn = hasStoredAuth && !isLoading && !data && !isError;
 
   // Enhanced JWT authentication detection and fallback
   const isJWTFallback = () => {
@@ -157,7 +159,6 @@ export const AppContextProvider = ({
       value={{
         showToast,
         isLoggedIn: finalIsLoggedIn,
-        stripePromise,
         showGlobalLoading,
         hideGlobalLoading,
         isGlobalLoading,

@@ -12,8 +12,68 @@ import {
 import { BookingFormData } from "./forms/BookingForm/BookingForm";
 import { queryClient } from "./main";
 
+//================================================
+//CRUD Users
 export const fetchCurrentUser = async (): Promise<UserType> => {
   const response = await axiosInstance.get("/api/users/me");
+  return response.data;
+};
+
+// Get all users (Owner only) - for overview
+export const getAllUsers = async (params?: {
+  role?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.role) queryParams.append("role", params.role);
+  if (params?.isActive !== undefined)
+    queryParams.append("isActive", params.isActive.toString());
+  if (params?.page) queryParams.append("page", params.page.toString());
+  // Tăng limit mặc định lên 1000 để lấy tất cả users
+  const limit = params?.limit || 1000;
+  queryParams.append("limit", limit.toString());
+  if (params?.search) queryParams.append("search", params.search);
+
+  const response = await axiosInstance.get(
+    `/api/users?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+// Get user by ID (Owner only)
+export const getUserById = async (userId: string) => {
+  const response = await axiosInstance.get(`/api/users/${userId}`);
+  return response.data;
+};
+
+// Update user (Owner only)
+export const updateUser = async (
+  userId: string,
+  userData: Partial<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: "user" | "hotel_owner" | "receptionist" | "manager";
+    phone: string;
+    isActive: boolean;
+  }>
+) => {
+  const response = await axiosInstance.patch(`/api/users/${userId}`, userData);
+  return response.data;
+};
+
+// Delete user - Soft delete (Owner only)
+export const deleteUser = async (userId: string) => {
+  const response = await axiosInstance.delete(`/api/users/${userId}`);
+  return response.data;
+};
+
+// Activate user (Owner only)
+export const activateUser = async (userId: string) => {
+  const response = await axiosInstance.patch(`/api/users/${userId}/activate`);
   return response.data;
 };
 
@@ -29,19 +89,16 @@ export const signIn = async (formData: SignInFormData) => {
   const token = response.data?.token;
   if (token) {
     localStorage.setItem("session_id", token);
-    console.log("JWT token stored in localStorage for incognito compatibility");
   }
 
   // Store user info for incognito mode fallback
   if (response.data?.userId) {
     localStorage.setItem("user_id", response.data.userId);
-    console.log("User ID stored for incognito mode fallback");
   }
 
   // Force validate token after successful login to update React Query cache
   try {
-    const validationResult = await validateToken();
-    console.log("Token validation after login:", validationResult);
+    await validateToken();
 
     // Invalidate and refetch the validateToken query to update the UI
     queryClient.invalidateQueries({ queryKey: ["validateToken"] });
@@ -49,11 +106,9 @@ export const signIn = async (formData: SignInFormData) => {
     // Force a refetch to ensure the UI updates
     await queryClient.refetchQueries({ queryKey: ["validateToken"] });
   } catch (error) {
-    console.log("Token validation failed after login, but continuing...");
-
-    // Even if validation fails, if we have a token stored, consider it a success for incognito mode
-    if (localStorage.getItem("session_id")) {
-      console.log("Incognito mode detected - using stored token as fallback");
+    // Token validation failed, but continue if we have a stored token (incognito mode)
+    if (!localStorage.getItem("session_id")) {
+      throw error;
     }
   }
 
@@ -229,6 +284,167 @@ export const fetchBusinessInsightsForecast = async () => {
 export const fetchBusinessInsightsPerformance = async () => {
   const response = await axiosInstance.get(
     "/api/business-insights/performance"
+  );
+  return response.data;
+};
+
+
+//================================================
+// CRUD Employee
+// Employees API functions
+export const getAllEmployees = async (params?: {
+  companyId?: string;
+  role?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.companyId) queryParams.append("companyId", params.companyId);
+  if (params?.role) queryParams.append("role", params.role);
+  if (params?.isActive !== undefined)
+    queryParams.append("isActive", params.isActive.toString());
+  if (params?.page) queryParams.append("page", params.page.toString());
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+  const response = await axiosInstance.get(
+    `/api/v2/employees?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+export const createEmployee = async (employeeData: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: "receptionist" | "manager" | "hotel_owner";
+  phone?: string;
+  companyId?: string;
+  isActive?: boolean;
+}) => {
+  const response = await axiosInstance.post("/api/v2/employees", employeeData);
+  return response.data;
+};
+
+export const updateEmployee = async (
+  employeeId: string,
+  employeeData: Partial<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: "receptionist" | "manager" | "hotel_owner";
+    phone: string;
+    companyId: string;
+    isActive: boolean;
+  }>
+) => {
+  const response = await axiosInstance.patch(
+    `/api/v2/employees/${employeeId}`,
+    employeeData
+  );
+  return response.data;
+};
+
+export const deleteEmployee = async (employeeId: string) => {
+  const response = await axiosInstance.delete(`/api/v2/employees/${employeeId}`);
+  return response.data;
+};
+
+export const updateEmployeePassword = async (
+  employeeId: string,
+  newPassword: string
+) => {
+  const response = await axiosInstance.patch(
+    `/api/v2/employees/${employeeId}/password`,
+    { newPassword }
+  );
+  return response.data;
+};
+
+export const activateEmployee = async (employeeId: string) => {
+  const response = await axiosInstance.patch(
+    `/api/v2/employees/${employeeId}/activate`
+  );
+  return response.data;
+};
+
+
+//================================================
+//CRUD  mã giảm giá
+// Promotions API functions
+export const getAllPromotions = async (params?: {
+  hotelId?: string;
+  isActive?: boolean;
+  currentDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.hotelId) queryParams.append("hotelId", params.hotelId);
+  if (params?.isActive !== undefined)
+    queryParams.append("isActive", params.isActive.toString());
+  if (params?.currentDate)
+    queryParams.append("currentDate", params.currentDate);
+
+  const response = await axiosInstance.get(
+    `/api/v2/promotions?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+export const getActivePromotions = async (hotelId?: string) => {
+  const queryParams = new URLSearchParams();
+  if (hotelId) queryParams.append("hotelId", hotelId);
+
+  const response = await axiosInstance.get(
+    `/api/v2/promotions/active?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+export const createPromotion = async (promotionData: {
+  name: string;
+  description: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT"; // loại giảm giá
+  discountValue: number;
+  startDate: string;
+  endDate: string;
+  hotelId?: string;
+  minStay?: number;
+  maxUsage?: number;
+  isActive?: boolean;
+}) => {
+  const response = await axiosInstance.post(
+    "/api/v2/promotions",
+    promotionData
+  );
+  return response.data;
+};
+
+export const updatePromotion = async (
+  promotionId: string,
+  promotionData: Partial<{
+    name: string;
+    description: string;
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT"; // loại giảm giá
+    discountValue: number;
+    startDate: string;
+    endDate: string;
+    hotelId: string;
+    minStay: number;
+    maxUsage: number;
+    isActive: boolean;
+  }>
+) => {
+  const response = await axiosInstance.patch(
+    `/api/v2/promotions/${promotionId}`,
+    promotionData
+  );
+  return response.data;
+};
+
+export const deletePromotion = async (promotionId: string) => {
+  const response = await axiosInstance.delete(
+    `/api/v2/promotions/${promotionId}`
   );
   return response.data;
 };

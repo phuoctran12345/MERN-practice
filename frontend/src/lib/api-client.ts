@@ -1,104 +1,101 @@
 import axios, { InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
-// Define base URL based on environment
+/**
+ * Xác định Base URL của API dựa trên môi trường
+ */
 const getBaseURL = () => {
+  // Ưu tiên: Lấy từ biến môi trường (.env)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  // Fallback URLs
-  if (window.location.hostname === "mern-booking-hotel.netlify.app") {
-    return "https://mern-hotel-booking-68ej.onrender.com";
-  }
-
+  // Nếu chạy localhost → dùng backend local
   if (window.location.hostname === "localhost") {
     return "http://localhost:7002";
   }
 
-  // Default to production
-  return "https://mern-hotel-booking-68ej.onrender.com";
+  // Mặc định: localhost
+  return "http://localhost:7002";
 };
 
-// Extend axios config to include metadata
+/**
+ * Mở rộng cấu hình Axios để thêm metadata (track số lần retry)
+ */
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   metadata?: { retryCount: number };
 }
 
-// Create axios instance with consistent configuration
+/**
+ * Tạo axios instance với cấu hình chung cho toàn bộ app
+ */
 const axiosInstance = axios.create({
   baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Ensure cookies are sent with requests
-  timeout: 30000, // 30 second timeout
+  withCredentials: true, // Gửi cookies cùng request
+  timeout: 30000, // Timeout 30 giây
 });
 
-// Request interceptor to add Authorization header with JWT token
+/**
+ * REQUEST INTERCEPTOR: Tự động chạy TRƯỚC KHI gửi request
+ * - Thêm JWT token vào Authorization header
+ * - Khởi tạo metadata để track retry
+ */
 axiosInstance.interceptors.request.use((config: CustomAxiosRequestConfig) => {
-  // Get JWT token from localStorage (no more cookie dependency)
+  // Lấy JWT token từ localStorage và thêm vào header
   const token = localStorage.getItem("session_id");
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log("Using JWT token from localStorage for authentication");
   }
 
-  // Add retry count to track retries
+  // Khởi tạo retry count = 0
   config.metadata = { retryCount: 0 };
 
   return config;
 });
 
-// Response interceptor to handle common errors and retries
+/**
+ * RESPONSE INTERCEPTOR: Tự động chạy SAU KHI nhận response
+ * Xử lý các lỗi phổ biến và tự động retry
+ */
 axiosInstance.interceptors.response.use(
+  // Request thành công → trả về response bình thường
   (response) => response,
+
+  // Request thất bại → xử lý lỗi
   async (error) => {
     const { config } = error;
 
-    // Handle 401 errors by clearing session
+    // Lỗi 401: Token hết hạn → Xóa token và session
     if (error.response?.status === 401) {
       Cookies.remove("session_id");
       localStorage.removeItem("session_id");
-      // Don't redirect automatically - let components handle it
     }
 
-    // Handle rate limiting (429) with retry logic
+    // Lỗi 429: Rate limit → Retry với exponential backoff (1s, 2s, 4s)
     if (error.response?.status === 429 && config) {
       const customConfig = config as CustomAxiosRequestConfig;
       if (customConfig.metadata && customConfig.metadata.retryCount < 3) {
-        const customConfig = config as CustomAxiosRequestConfig;
-        if (customConfig.metadata) {
-          customConfig.metadata.retryCount += 1;
-
-          // Exponential backoff: wait 1s, 2s, 4s
-          const delay =
-            Math.pow(2, customConfig.metadata.retryCount - 1) * 1000;
-
-          await new Promise((resolve) => setTimeout(resolve, delay));
-
-          return axiosInstance(config);
-        }
+        customConfig.metadata.retryCount += 1;
+        const delay = Math.pow(2, customConfig.metadata.retryCount - 1) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return axiosInstance(config);
       }
     }
 
-    // Handle network errors with retry
+    // Lỗi network (mất kết nối) → Retry sau 2 giây (tối đa 2 lần)
     if (!error.response && config) {
       const customConfig = config as CustomAxiosRequestConfig;
       if (customConfig.metadata && customConfig.metadata.retryCount < 2) {
-        const customConfig = config as CustomAxiosRequestConfig;
-        if (customConfig.metadata) {
-          customConfig.metadata.retryCount += 1;
-
-          // Wait 2 seconds before retry
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-
-          return axiosInstance(config);
-        }
+        customConfig.metadata.retryCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return axiosInstance(config);
       }
     }
 
+    // Nếu không retry được → reject error
     return Promise.reject(error);
   }
 );

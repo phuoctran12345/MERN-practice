@@ -95,48 +95,48 @@
 
 ---
 
-### 🗓️ NGÀY 2: 31/12/2025 - OWNER DASHBOARD
+### 🗓️ NGÀY 2: 31/12/2025 - OWNER DASHBOARD ✅ HOÀN THÀNH
 **Mục tiêu:** Hoàn thành Owner Dashboard với UC 11, 12, 13, 14
 
 #### Task List:
-- [ ] **2.1 Create Dashboard Layout**
-  - [ ] Tạo `src/layouts/DashboardLayout.tsx`
-  - [ ] Tạo `src/components/dashboard/Sidebar.tsx` với menu theo role
-  - [ ] Apply Neo Brutalism styling
-  - [ ] Responsive (mobile → hamburger menu)
+- [x] **2.1 Create Dashboard Layout** ✅
+  - [x] Tạo `src/layouts/DashboardLayout.tsx`
+  - [x] Tạo `src/components/dashboard/Sidebar.tsx` với menu theo role
+  - [x] Apply Neo Brutalism styling
+  - [x] Responsive (mobile → hamburger menu)
 
-- [ ] **2.2 Owner Dashboard Page**
-  - [ ] Tạo `src/pages/dashboard/owner/OwnerDashboard.tsx`
-  - [ ] Tạo route `/dashboard/owner` trong App.tsx
-  - [ ] Stats Cards component (Revenue, Bookings, Hotels, Employees)
-  - [ ] Revenue Chart (Recharts)
-  - [ ] Bookings Chart (Pie/Bar)
+- [x] **2.2 Owner Dashboard Page** ✅
+  - [x] Tạo `src/pages/dashboard/owner/OwnerDashboard.tsx`
+  - [x] Tạo route `/dashboard/owner` trong App.tsx
+  - [x] Stats Cards component (Revenue, Bookings, Hotels, Employees)
+  - [x] Revenue Chart (Recharts)
+  - [x] Bookings Chart (Pie/Bar)
 
-- [ ] **2.3 Hotels Management Section (UC 11)**
-  - [ ] Tạo `src/pages/dashboard/owner/HotelsSection.tsx`
-  - [ ] List hotels với filters
-  - [ ] CRUD operations (đã có AddHotel, EditHotel, cần integrate)
+- [x] **2.3 Hotels Management Section (UC 11)** ✅
+  - [x] Tạo `src/pages/dashboard/owner/HotelsSection.tsx`
+  - [x] List hotels với filters
+  - [x] CRUD operations (đã có AddHotel, EditHotel, đã integrate)
 
-- [ ] **2.4 Employees Management Section (UC 13)**
-  - [ ] Tạo `src/pages/dashboard/owner/EmployeesSection.tsx`
-  - [ ] Tạo `src/components/forms/EmployeeForm.tsx`
-  - [ ] List employees với filters
-  - [ ] CRUD operations (Create, Read, Update, Delete/Deactivate)
-  - [ ] Change password functionality
+- [x] **2.4 Employees Management Section (UC 13)** ✅
+  - [x] Tạo `src/pages/dashboard/owner/EmployeesSection.tsx`
+  - [x] Tạo `src/components/forms/EmployeeForm.tsx`
+  - [x] List employees với filters
+  - [x] CRUD operations (Create, Read, Update, Delete/Deactivate)
+  - [x] Change password functionality (có trong form, có thể thêm API riêng sau)
 
-- [ ] **2.5 Promotions Management Section (UC 12)**
-  - [ ] Tạo `src/pages/dashboard/owner/PromotionsSection.tsx`
-  - [ ] Tạo `src/components/forms/PromotionForm.tsx`
-  - [ ] List promotions với filters
-  - [ ] CRUD operations
+- [x] **2.5 Promotions Management Section (UC 12)** ✅
+  - [x] Tạo `src/pages/dashboard/owner/PromotionsSection.tsx`
+  - [x] Tạo `src/components/forms/PromotionForm.tsx`
+  - [x] List promotions với filters
+  - [x] CRUD operations
 
-- [ ] **2.6 Analytics Section (UC 14)**
-  - [ ] Tạo `src/pages/dashboard/owner/AnalyticsSection.tsx`
-  - [ ] Revenue charts (daily/weekly/monthly)
-  - [ ] Occupancy rate charts
-  - [ ] Performance metrics
+- [x] **2.6 Analytics Section (UC 14)** ✅
+  - [x] Tạo `src/pages/dashboard/owner/AnalyticsSection.tsx`
+  - [x] Revenue charts (daily/weekly/monthly)
+  - [x] Occupancy rate charts
+  - [x] Performance metrics
 
-**Kết quả mong đợi:** Owner Dashboard hoàn chỉnh với tất cả sections
+**Kết quả mong đợi:** ✅ Owner Dashboard hoàn chỉnh với tất cả sections
 
 ---
 

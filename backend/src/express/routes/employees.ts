@@ -8,11 +8,11 @@ const router = express.Router();
 
 // ============================================
 // POST /api/v2/employees
-// Tạo nhân viên mới (Manager)
+// Tạo nhân viên mới (Manager hoặc Owner)
 router.post(
   "/",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     body("email").isEmail().withMessage("Email không hợp lệ"),
     body("password")
@@ -33,11 +33,11 @@ router.post(
 
 // ============================================
 // GET /api/v2/employees
-// Lấy danh sách nhân viên với filters và pagination (Manager)
+// Lấy danh sách nhân viên với filters và pagination (Manager hoặc Owner)
 router.get(
   "/",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     query("companyId").optional().isString(),
     query("role").optional().isIn(["receptionist", "manager", "hotel_owner"]),
@@ -50,11 +50,11 @@ router.get(
 
 // ============================================
 // GET /api/v2/employees/role/:role
-// Lấy danh sách nhân viên theo role (Manager)
+// Lấy danh sách nhân viên theo role (Manager hoặc Owner)
 router.get(
   "/role/:role",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     param("role").isIn(["receptionist", "manager", "hotel_owner"]),
     query("companyId").optional().isString(),
@@ -64,22 +64,22 @@ router.get(
 
 // ============================================
 // GET /api/v2/employees/:id
-// Lấy thông tin một nhân viên cụ thể (Manager)
+// Lấy thông tin một nhân viên cụ thể (Manager hoặc Owner)
 router.get(
   "/:id",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [param("id").notEmpty().withMessage("Employee ID là bắt buộc")],
   employeeController.getEmployeeById
 );
 
 // ============================================
 // PATCH /api/v2/employees/:id
-// Cập nhật nhân viên (Manager)
+// Cập nhật nhân viên (Manager hoặc Owner)
 router.patch(
   "/:id",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     param("id").notEmpty().withMessage("Employee ID là bắt buộc"),
     body("email").optional().isEmail(),
@@ -96,22 +96,22 @@ router.patch(
 
 // ============================================
 // DELETE /api/v2/employees/:id
-// Xóa (deactivate) nhân viên (Manager)
+// Xóa (deactivate) nhân viên (Manager hoặc Owner)
 router.delete(
   "/:id",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [param("id").notEmpty().withMessage("Employee ID là bắt buộc")],
   employeeController.deleteEmployee
 );
 
 // ============================================
 // PATCH /api/v2/employees/:id/password
-// Đổi mật khẩu nhân viên (Manager)
+// Đổi mật khẩu nhân viên (Manager hoặc Owner)
 router.patch(
   "/:id/password",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [
     param("id").notEmpty().withMessage("Employee ID là bắt buộc"),
     body("newPassword")
@@ -123,11 +123,11 @@ router.patch(
 
 // ============================================
 // PATCH /api/v2/employees/:id/activate
-// Kích hoạt nhân viên (Manager)
+// Kích hoạt nhân viên (Manager hoặc Owner)
 router.patch(
   "/:id/activate",
   verifyToken,
-  roleCheck(["manager"]),
+  roleCheck(["manager", "hotel_owner"]),
   [param("id").notEmpty().withMessage("Employee ID là bắt buộc")],
   employeeController.activateEmployee
 );

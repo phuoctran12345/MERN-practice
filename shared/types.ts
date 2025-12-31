@@ -154,3 +154,40 @@ export type PaymentIntentResponse = {
   clientSecret: string;
   totalCost: number;
 };
+
+/**
+ * TYPE: EmployeeType - Định nghĩa cấu trúc nhân viên
+ */
+export type EmployeeType = {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "receptionist" | "manager" | "hotel_owner";
+  phone?: string;
+  companyId?: string;
+  isActive?: boolean;
+  emailVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+/**
+ * TYPE: PromotionType - Định nghĩa cấu trúc khuyến mãi
+ */
+export type PromotionType = {
+  _id: string;
+  name: string;
+  description: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  discountValue: number;
+  startDate: Date;
+  endDate: Date;
+  hotelId?: string;
+  minStay?: number;
+  maxUsage?: number;
+  currentUsage?: number;
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+};

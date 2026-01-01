@@ -25,7 +25,7 @@ Table companies {
 // 2. NGƯỜI DÙNG
 Table users {
   id ObjectId [primary key]
-  company_id ObjectId [ref: > companies.id]
+  company_id ObjectId [ref: > companies.id, note: 'Optional - null cho customer']
   email varchar [unique]
   password_hash varchar
   firstName varchar
@@ -41,6 +41,14 @@ Table users {
   emailVerified boolean [default: false]
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
+
+  Indexes {
+    email [unique]
+    company_id
+    role
+    (company_id, role) [name: 'company_role_idx']
+    isActive
+  }
 }
 
 // 3. KHÁCH SẠN
@@ -89,13 +97,21 @@ Table rooms {
   roomNumber varchar
   roomType varchar [note: 'SINGLE, DOUBLE, SUITE, DELUXE']
   basePrice decimal
-  status varchar [default: 'AVAILABLE']
+  status varchar [default: 'AVAILABLE', note: 'AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED']
   maxOccupancy integer
   bedType varchar
   amenities varchar[]
   floor integer
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
+
+  Indexes {
+    hotel_id
+    (hotel_id, status) [name: 'hotel_status_idx']
+    (hotel_id, roomType) [name: 'hotel_roomtype_idx']
+    (hotel_id, roomNumber) [unique, name: 'hotel_roomnumber_unique']
+    status
+  }
 }
 
 // 5. ĐẶT PHÒNG
@@ -103,7 +119,7 @@ Table bookings {
   id ObjectId [primary key]
   userId ObjectId [ref: > users.id]
   hotelId ObjectId [ref: > hotels.id]
-  roomId ObjectId [ref: > rooms.id]
+  roomId ObjectId [ref: > rooms.id, note: 'ID phòng cụ thể được đặt']
   firstName varchar
   lastName varchar
   email varchar
@@ -112,17 +128,39 @@ Table bookings {
   childCount integer
   checkIn timestamp
   checkOut timestamp
-  totalCost decimal
-  status varchar [note: 'pending, confirmed, checked_in, completed, cancelled']
+  totalCost decimal [note: 'Giá booking ban đầu']
+  finalTotalCost decimal [note: 'Tổng tiền cuối (booking + services + extra charges)']
+  status varchar [note: 'pending, confirmed, checked_in, completed, cancelled, refunded']
   paymentStatus varchar [note: 'pending, paid, failed, refunded']
-  paymentMethod varchar
-  paymentIntentId varchar
+  paymentMethod varchar [note: 'online, cash, card']
+  paymentIntentId varchar [note: 'DEPRECATED: Stripe Payment Intent ID (giữ lại để tương thích)']
+  orderCode integer [note: 'PayOS Order Code - thay thế paymentIntentId']
+  promotionCode varchar [note: 'Mã giảm giá đã áp dụng (optional)']
+  promotionId ObjectId [ref: > promotions.id, note: 'ID promotion đã áp dụng (optional)']
+  specialRequests text
+  cancellationReason text
+  refundAmount decimal [default: 0]
+  checkedInAt timestamp [note: 'Thời gian thực tế check-in']
+  checkedOutAt timestamp [note: 'Thời gian thực tế check-out']
+  notes text [note: 'Ghi chú khi check-out']
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 
   Indexes {
+    userId
+    hotelId
+    roomId
     (userId, created_at) [name: 'user_bookings_idx']
     (hotelId, checkIn) [name: 'hotel_checkin_idx']
+    (roomId, checkIn) [name: 'room_checkin_idx']
+    status
+    (status, created_at) [name: 'status_created_idx']
+    paymentStatus
+    (paymentStatus, created_at) [name: 'payment_status_created_idx']
+    (checkIn, status) [name: 'checkin_status_idx']
+    orderCode [note: 'Index cho PayOS queries']
+    email
+    checkIn
   }
 }
 
@@ -164,16 +202,60 @@ Table ai_contract_analysis {
   lastAnalyzed timestamp
 }
 
-// 9. DỊCH VỤ PHÁT SINH
-Table extra_services {
+// 9. YÊU CẦU DỊCH VỤ (UC 8)
+Table service_requests {
   id ObjectId [primary key]
   booking_id ObjectId [ref: > bookings.id]
-  service_name varchar
+  user_id ObjectId [ref: > users.id]
+  hotel_id ObjectId [ref: > hotels.id]
+  service_type varchar [note: 'room_service, laundry, cleaning, food, transport, minibar, other']
+  description text
   price decimal
+  status varchar [note: 'pending, in_progress, completed, cancelled']
   requested_at timestamp [default: `now()`]
+  completed_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    booking_id
+    (booking_id, status) [name: 'booking_status_idx']
+    user_id
+    (user_id, created_at) [name: 'user_requests_idx']
+    hotel_id
+    (hotel_id, status) [name: 'hotel_status_idx']
+    service_type
+    status
+  }
 }
 
-// 10. NHẬT KÝ HỆ THỐNG
+// 10. KHUYẾN MÃI (UC 12)
+Table promotions {
+  id ObjectId [primary key]
+  hotel_id ObjectId [ref: > hotels.id, note: 'null = áp dụng cho tất cả hotels']
+  name varchar
+  description text
+  discount_type varchar [note: 'PERCENTAGE, FIXED_AMOUNT']
+  discount_value decimal
+  start_date timestamp
+  end_date timestamp
+  min_stay integer [note: 'Số đêm tối thiểu']
+  max_usage integer [note: 'Số lần sử dụng tối đa']
+  current_usage integer [default: 0]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    hotel_id
+    (hotel_id, is_active) [name: 'hotel_active_idx']
+    (start_date, end_date) [name: 'date_range_idx']
+    (is_active, start_date, end_date) [name: 'active_date_idx']
+    is_active
+  }
+}
+
+// 11. NHẬT KÝ HỆ THỐNG
 Table audit_logs {
   id ObjectId [primary key]
   user_id ObjectId [ref: > users.id]
@@ -181,4 +263,11 @@ Table audit_logs {
   targetType varchar
   targetId varchar
   timestamp timestamp [default: `now()`]
+
+  Indexes {
+    user_id
+    (user_id, timestamp) [name: 'user_timestamp_idx']
+    targetType
+    (targetType, targetId) [name: 'target_idx']
+  }
 }

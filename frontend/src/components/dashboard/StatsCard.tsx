@@ -38,11 +38,10 @@ const StatsCard = ({
           </p>
           {trend && (
             <div
-              className={`inline-flex items-center gap-1 px-2 py-1 font-bold text-xs ${
-                trend.isPositive
+              className={`inline-flex items-center gap-1 px-2 py-1 font-bold text-xs ${trend.isPositive
                   ? "bg-green-100 text-green-800"
                   : "bg-red-100 text-red-800"
-              }`}
+                }`}
             >
               <span>{trend.isPositive ? "↑" : "↓"}</span>
               <span>{Math.abs(trend.value)}%</span>

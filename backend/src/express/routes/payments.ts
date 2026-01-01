@@ -1,24 +1,73 @@
 import express, { Request, Response } from "express";
 import { verifyWebhook } from "../../services/payos.service";
 import Booking from "../../models/booking";
+import verifyToken from "../middleware/auth";
+import * as paymentController from "../controllers/payment.controller";
+import { param, query } from "express-validator";
 
 const router = express.Router();
 
 // ============================================
+// GET /api/payments
+// Lấy danh sách tất cả giao dịch thanh toán
+// ============================================
+router.get(
+  "/",
+  verifyToken,
+  [
+    query("status").optional().isString(),
+    query("paymentStatus").optional().isString(),
+    query("hotelId").optional().isString(),
+    query("userId").optional().isString(),
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+  ],
+  paymentController.getAllPayments
+);
+
+// ============================================
+// GET /api/payments/statistics
+// Lấy thống kê giao dịch thanh toán
+// ============================================
+router.get(
+  "/statistics",
+  verifyToken,
+  [
+    query("startDate").optional().isISO8601(),
+    query("endDate").optional().isISO8601(),
+    query("hotelId").optional().isString(),
+  ],
+  paymentController.getPaymentStatistics
+);
+
+// ============================================
+// GET /api/payments/:orderCode
+// Lấy chi tiết một giao dịch thanh toán theo orderCode
+// ============================================
+router.get(
+  "/:orderCode",
+  verifyToken,
+  [param("orderCode").notEmpty().withMessage("orderCode là bắt buộc")],
+  paymentController.getPaymentByOrderCode
+);
+
+// ============================================
 // POST /api/payments/webhook
 // Webhook endpoint (PayOS sẽ gọi khi có thay đổi trạng thái thanh toán)
+// ⚠️ KHÔNG CẦN verifyToken vì PayOS gọi từ bên ngoài
 // ============================================
 router.post("/webhook", async (req: Request, res: Response) => {
   try {
-    // B1: Verify webhook data
-    const isValid = verifyWebhook(req.body);
+    // B1: Verify webhook data (sử dụng API chính thức)
+    const verifiedData = verifyWebhook(req.body);
     
-    if (!isValid) {
+    if (!verifiedData) {
       console.error("❌ Webhook data không hợp lệ");
       return res.status(400).json({ message: "Invalid webhook data" });
     }
 
-    const { data } = req.body;
+    // verifiedData đã được verify và trả về từ payOS.webhooks.verify()
+    const { data } = verifiedData;
     const { orderCode, status } = data;
 
     console.log(`📢 Webhook nhận được: orderCode=${orderCode}, status=${status}`);

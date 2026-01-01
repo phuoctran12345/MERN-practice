@@ -5,11 +5,13 @@ import {
   HotelSearchResponse,
   HotelType,
   PaymentIntentResponse,
+  PayOSPaymentLinkResponse,
   UserType,
   HotelWithBookingsType,
   BookingType,
 } from "../../shared/types";
 import { BookingFormData } from "./forms/BookingForm/BookingForm";
+import { BookingFormDataForPayOS } from "./forms/BookingForm/BookingFormPayOS";
 import { queryClient } from "./main";
 
 //================================================
@@ -26,6 +28,7 @@ export const getAllUsers = async (params?: {
   page?: number;
   limit?: number;
   search?: string;
+  companyId?: string; // Filter theo companyId (cho employees cùng công ty)
 }) => {
   const queryParams = new URLSearchParams();
   if (params?.role) queryParams.append("role", params.role);
@@ -36,6 +39,7 @@ export const getAllUsers = async (params?: {
   const limit = params?.limit || 1000;
   queryParams.append("limit", limit.toString());
   if (params?.search) queryParams.append("search", params.search);
+  if (params?.companyId) queryParams.append("companyId", params.companyId);
 
   const response = await axiosInstance.get(
     `/api/users?${queryParams.toString()}`
@@ -68,6 +72,18 @@ export const updateUser = async (
 // Delete user - Soft delete (Owner only)
 export const deleteUser = async (userId: string) => {
   const response = await axiosInstance.delete(`/api/users/${userId}`);
+  return response.data;
+};
+
+// Update user password (Owner only)
+export const updateUserPassword = async (
+  userId: string,
+  newPassword: string
+) => {
+  const response = await axiosInstance.patch(
+    `/api/users/${userId}/password`,
+    { newPassword }
+  );
   return response.data;
 };
 
@@ -239,6 +255,7 @@ export const fetchHotelById = async (hotelId: string): Promise<HotelType> => {
   return response.data;
 };
 
+// ⚠️ DEPRECATED: Stripe Payment Intent (giữ lại để tương thích tạm thời)
 export const createPaymentIntent = async (
   hotelId: string,
   numberOfNights: string
@@ -250,7 +267,20 @@ export const createPaymentIntent = async (
   return response.data;
 };
 
-export const createRoomBooking = async (formData: BookingFormData) => {
+// ✅ PayOS: Tạo payment link
+export const createPayOSPaymentLink = async (
+  hotelId: string,
+  numberOfNights: number
+): Promise<PayOSPaymentLinkResponse> => {
+  const response = await axiosInstance.post(
+    `/api/hotels/${hotelId}/bookings/payment-intent`,
+    { numberOfNights }
+  );
+  return response.data;
+};
+
+// ⚠️ DEPRECATED: Stripe booking (giữ lại để tương thích)
+export const createRoomBooking = async (formData: BookingFormData | BookingFormDataForPayOS) => {
   const response = await axiosInstance.post(
     `/api/hotels/${formData.hotelId}/bookings`,
     formData
@@ -267,6 +297,108 @@ export const fetchHotelBookings = async (
   hotelId: string
 ): Promise<BookingType[]> => {
   const response = await axiosInstance.get(`/api/bookings/hotel/${hotelId}`);
+  return response.data;
+};
+
+// ============================================
+// BOOKINGS MANAGEMENT API (Manager/Receptionist)
+// ============================================
+export const getAllBookings = async (params?: {
+  status?: string;
+  hotelId?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ bookings: BookingType[]; pagination: any }> => {
+  const queryParams = new URLSearchParams();
+  if (params?.status) queryParams.append("status", params.status);
+  if (params?.hotelId) queryParams.append("hotelId", params.hotelId);
+  if (params?.userId) queryParams.append("userId", params.userId);
+  if (params?.page) queryParams.append("page", params.page.toString());
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+  const response = await axiosInstance.get(
+    `/api/bookings?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+export const updateBooking = async (
+  bookingId: string,
+  bookingData: Partial<BookingType>
+) => {
+  const response = await axiosInstance.put(
+    `/api/bookings/${bookingId}`,
+    bookingData
+  );
+  return response.data;
+};
+
+// ============================================
+// CHECK-IN / CHECK-OUT API
+// ============================================
+export const checkIn = async (data: { bookingId: string; roomId?: string }) => {
+  const response = await axiosInstance.post(
+    "/api/v2/booking-operations/check-in",
+    data
+  );
+  return response.data;
+};
+
+export const checkOut = async (data: {
+  bookingId: string;
+  extraCharges?: number;
+  notes?: string;
+  paymentMethod?: "cash" | "card"; // Payment method cho phần thanh toán bổ sung
+}) => {
+  const response = await axiosInstance.post(
+    "/api/v2/booking-operations/check-out",
+    data
+  );
+  return response.data;
+};
+
+// ============================================
+// SERVICE REQUESTS API
+// ============================================
+export const getAllServiceRequests = async (params?: {
+  bookingId?: string;
+  userId?: string;
+  hotelId?: string;
+  status?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.bookingId) queryParams.append("bookingId", params.bookingId);
+  if (params?.userId) queryParams.append("userId", params.userId);
+  if (params?.hotelId) queryParams.append("hotelId", params.hotelId);
+  if (params?.status) queryParams.append("status", params.status);
+
+  const response = await axiosInstance.get(
+    `/api/v2/service-requests?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+export const createServiceRequest = async (data: {
+  bookingId: string;
+  userId: string;
+  hotelId: string;
+  serviceType: string;
+  description: string;
+  price?: number;
+}) => {
+  const response = await axiosInstance.post("/api/v2/service-requests", data);
+  return response.data;
+};
+
+export const updateServiceRequest = async (
+  serviceRequestId: string,
+  data: { status?: string; price?: number; description?: string }
+) => {
+  const response = await axiosInstance.patch(
+    `/api/v2/service-requests/${serviceRequestId}`,
+    data
+  );
   return response.data;
 };
 
@@ -438,6 +570,93 @@ export const updatePromotion = async (
   const response = await axiosInstance.patch(
     `/api/v2/promotions/${promotionId}`,
     promotionData
+  );
+  return response.data;
+};
+
+// ============================================
+// PAYMENTS MANAGEMENT API
+// ============================================
+export interface PaymentType {
+  orderCode: number;
+  bookingId: string;
+  userId: any;
+  hotelId: any;
+  hotelName?: string;
+  customerName: string;
+  customerEmail: string;
+  amount: number;
+  status: string;
+  bookingStatus: string;
+  checkIn: string;
+  checkOut: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentDetailType extends PaymentType {
+  hotelCity?: string;
+  customerPhone?: string;
+  finalTotalCost?: number;
+  paymentMethod?: string;
+  adultCount: number;
+  childCount: number;
+  specialRequests?: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  payosInfo?: any;
+}
+
+export interface PaymentStatisticsType {
+  totalTransactions: number;
+  totalRevenue: number;
+  statusBreakdown: Record<string, number>;
+}
+
+// Lấy danh sách giao dịch thanh toán
+export const getAllPayments = async (params?: {
+  status?: string;
+  paymentStatus?: string;
+  hotelId?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ payments: PaymentType[]; pagination: any }> => {
+  const queryParams = new URLSearchParams();
+  if (params?.status) queryParams.append("status", params.status);
+  if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
+  if (params?.hotelId) queryParams.append("hotelId", params.hotelId);
+  if (params?.userId) queryParams.append("userId", params.userId);
+  if (params?.page) queryParams.append("page", params.page.toString());
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+  const response = await axiosInstance.get(
+    `/api/payments?${queryParams.toString()}`
+  );
+  return response.data;
+};
+
+// Lấy chi tiết một giao dịch theo orderCode
+export const getPaymentByOrderCode = async (
+  orderCode: string
+): Promise<{ payment: PaymentDetailType }> => {
+  const response = await axiosInstance.get(`/api/payments/${orderCode}`);
+  return response.data;
+};
+
+// Lấy thống kê giao dịch
+export const getPaymentStatistics = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  hotelId?: string;
+}): Promise<{ statistics: PaymentStatisticsType }> => {
+  const queryParams = new URLSearchParams();
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  if (params?.hotelId) queryParams.append("hotelId", params.hotelId);
+
+  const response = await axiosInstance.get(
+    `/api/payments/statistics?${queryParams.toString()}`
   );
   return response.data;
 };

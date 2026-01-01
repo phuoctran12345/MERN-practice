@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import User from "../../models/user";
 import UserType from "../../models/user";
+import Hotel from "../../models/hotel";
+import Booking from "../../models/booking";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { getIO } from "../../shared/socket";
 //======================================================
 // GET /api/users/me - lấy thông tin user hiện tại
@@ -40,7 +43,13 @@ export const registerUser = async (req: Request, res: Response) => {
         }
 
         // B2: Tạo user mới (email chưa tồn tại)
-        user = new User(req.body); // tạo instance của user model  req.body chứa  firstName, lastName, email, password
+        // Nếu không có role trong req.body → mặc định là "user"
+        const userData = {
+            ...req.body,
+            role: req.body.role || "user", // Mặc định role = "user" nếu không có
+        };
+        
+        user = new User(userData); // tạo instance của user model  req.body chứa  firstName, lastName, email, password, role (optional)
 
         await user.save();
 
@@ -71,17 +80,64 @@ export const registerUser = async (req: Request, res: Response) => {
 
 //======================================================
 // GET /api/users - Lấy danh sách tất cả users (Owner only)
-// MỤC ĐÍCH: Owner xem overview tất cả users trong hệ thống
+// MỤC ĐÍCH: Owner xem overview tất cả users đã sử dụng trong hệ thống
+// LOGIC:
+// - Nếu có companyId và role = "user" → chỉ lấy customers đã đặt phòng ở hotels của công ty đó
+// - Nếu có companyId nhưng không có role → chỉ lấy employees (manager, receptionist) cùng companyId
+// - Nếu không có companyId và role = "user" → lấy tất cả customers
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const { role, isActive, page = "1", limit = "10", search } = req.query;
+        const { role, isActive, page = "1", limit = "10", search, companyId } = req.query;
 
         // Build query
         const query: any = {};
 
-        // Filter by role
-        if (role) {
+        // ============================================
+        // XỬ LÝ LOGIC CHO CUSTOMERS (role = "user")
+        // ============================================
+        // Nếu role = "user" và có companyId → chỉ lấy customers đã đặt phòng ở hotels của công ty đó
+        if (role === "user" && companyId) {
+            // B1: Lấy tất cả hotels có companyId
+            const hotels = await Hotel.find({ companyId: companyId as string }).select("_id");
+            const hotelIds = hotels.map((hotel) => hotel._id.toString());
+
+            // B2: Nếu không có hotels nào → trả về mảng rỗng
+            if (hotelIds.length === 0) {
+                return res.status(200).json({
+                    message: "Lấy danh sách users thành công",
+                    users: [],
+                    pagination: {
+                        total: 0,
+                        page: parseInt(page as string, 10),
+                        limit: parseInt(limit as string, 10),
+                        pages: 0,
+                    },
+                });
+            }
+
+            // B3: Lấy tất cả bookings có hotelId trong danh sách hotels
+            const bookings = await Booking.find({
+                hotelId: { $in: hotelIds },
+            }).select("userId");
+
+            // B4: Lấy danh sách userId từ bookings (loại bỏ trùng lặp)
+            const customerIds = [...new Set(bookings.map((booking) => booking.userId))];
+
+            // B5: Filter users theo danh sách customerIds
+            query._id = { $in: customerIds };
+            query.role = "user"; // Đảm bảo chỉ lấy customers
+        } else if (role) {
+            // Nếu có role cụ thể (không phải "user" hoặc không có companyId)
             query.role = role;
+        } else if (companyId) {
+            // Nếu có companyId nhưng không có role → chỉ lấy employees (manager, receptionist)
+            // KHÔNG lấy customers (role = "user")
+            query.role = { $in: ["manager", "receptionist", "hotel_owner"] };
+        }
+
+        // Filter by companyId (cho employees cùng công ty)
+        if (companyId && role !== "user") {
+            query.companyId = companyId;
         }
 
         // Filter by isActive
@@ -243,6 +299,46 @@ export const deleteUser = async (req: Request, res: Response) => {
         console.error("❌ Lỗi deleteUser:", error);
         res.status(500).json({
             message: "Lỗi khi xóa user",
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+};
+
+//======================================================
+// PATCH /api/users/:id/password - Đổi mật khẩu user (Owner only)
+export const updateUserPassword = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { newPassword } = req.body;
+
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({
+                message: "Mật khẩu mới phải có ít nhất 6 ký tự",
+            });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                message: "Không tìm thấy user với ID này",
+            });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 8);
+
+        await User.findByIdAndUpdate(id, {
+            password: hashedPassword,
+            updatedAt: new Date(),
+        });
+
+        res.status(200).json({
+            message: "Đổi mật khẩu user thành công",
+        });
+    } catch (error) {
+        console.error("❌ Lỗi updateUserPassword:", error);
+        res.status(500).json({
+            message: "Lỗi khi đổi mật khẩu user",
             error: error instanceof Error ? error.message : String(error),
         });
     }

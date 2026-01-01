@@ -146,6 +146,7 @@ const SignIn = () => {
                   <Input
                     id="email"
                     type="email"
+                    autoComplete="email"
                     className="pl-10 pr-3 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Enter your email"
                     {...register("email", { required: "Email is required" })}
@@ -179,6 +180,7 @@ const SignIn = () => {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     className="pl-10 pr-12 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Enter your password"
                     {...register("password", {

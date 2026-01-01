@@ -22,11 +22,12 @@ export interface PaymentLinkData {
 
 /**
  * Tạo payment link từ PayOS
+ * Sử dụng API chính thức: payOS.paymentRequests.create()
  */
 export const createPaymentLink = async (data: PaymentLinkData) => {
   try {
-    // PayOS API: createPaymentLink
-    const paymentLink = await (payos as any).createPaymentLink({
+    // ✅ PayOS API chính thức: paymentRequests.create()
+    const paymentLink = await payos.paymentRequests.create({
       orderCode: data.orderCode,
       amount: data.amount,
       description: data.description,
@@ -44,27 +45,38 @@ export const createPaymentLink = async (data: PaymentLinkData) => {
 
 /**
  * Xác thực webhook từ PayOS
+ * Sử dụng API chính thức: payOS.webhooks.verify()
  */
 export const verifyWebhook = (webhookData: any) => {
   try {
-    // PayOS API: verifyPaymentWebhookData hoặc verifySignature
-    return (payos as any).verifyPaymentWebhookData?.(webhookData) || 
-           (payos as any).verifySignature?.(webhookData, webhookData.signature) || 
-           true; // Tạm thời return true nếu không có method
+    // ✅ PayOS API chính thức: webhooks.verify()
+    // Method này sẽ throw error nếu webhook không hợp lệ
+    const verifiedData = payos.webhooks.verify(webhookData);
+    return verifiedData; // Trả về dữ liệu đã verify
   } catch (error) {
-    console.error("❌ Lỗi verify webhook:", error);
-    return false;
+    console.error("❌ Webhook không hợp lệ:", error);
+    return null; // Trả về null nếu verify thất bại
   }
 };
 
 /**
- * Lấy thông tin payment theo orderCode
+ * Lấy thông tin payment link theo orderCode
+ * Sử dụng API chính thức từ PayOS SDK
+ * Note: Method có thể là get() hoặc getPaymentLinkInformation() tùy version
  */
 export const getPaymentInfo = async (orderCode: number) => {
   try {
-    // PayOS API: getPaymentLinkInformation hoặc getPaymentLinkInfo
-    const paymentInfo = await (payos as any).getPaymentLinkInformation?.(orderCode) ||
-                       await (payos as any).getPaymentLinkInfo?.(orderCode);
+    // ✅ PayOS API chính thức: paymentRequests.get() hoặc getPaymentLinkInformation()
+    // Dùng type assertion vì TypeScript có thể không có type definition đầy đủ
+    const paymentRequests = payos.paymentRequests as any;
+    const paymentInfo = await paymentRequests.get?.(orderCode) ||
+                       await paymentRequests.getPaymentLinkInformation?.(orderCode) ||
+                       await paymentRequests.getPaymentLinkInfo?.(orderCode);
+    
+    if (!paymentInfo) {
+      throw new Error("Không tìm thấy method để lấy thông tin payment link trong PayOS SDK");
+    }
+    
     return paymentInfo;
   } catch (error) {
     console.error("❌ Lỗi lấy thông tin payment:", error);

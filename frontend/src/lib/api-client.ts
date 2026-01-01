@@ -49,6 +49,12 @@ axiosInstance.interceptors.request.use((config: CustomAxiosRequestConfig) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Đã tắt log để giảm noise trong console
+  // } else {
+  //   if (import.meta.env.DEV) {
+  //     console.warn("⚠️  No JWT token found in localStorage for request:", config.url);
+  //   }
+  // }
 
   // Khởi tạo retry count = 0
   config.metadata = { retryCount: 0 };

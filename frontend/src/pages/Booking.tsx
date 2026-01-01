@@ -1,13 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
-import BookingForm from "../forms/BookingForm/BookingForm";
+import BookingFormPayOS from "../forms/BookingForm/BookingFormPayOS";
 import useSearchContext from "../hooks/useSearchContext";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BookingDetailsSummary from "../components/BookingDetailsSummary";
-// Stripe đã được xóa - không dùng nữa
-// import { Elements } from "@stripe/react-stripe-js";
-import useAppContext from "../hooks/useAppContext";
 import {
   Card,
   CardContent,
@@ -16,6 +13,7 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
+import { formatVND } from "../utils/formatCurrency";
 
 const Booking = () => {
   // Stripe đã được xóa - không dùng nữa
@@ -35,12 +33,13 @@ const Booking = () => {
     }
   }, [search.checkIn, search.checkOut]);
 
-  const { data: paymentIntentData, isLoading: isLoadingPayment } = useQuery({
-    queryKey: ["createPaymentIntent", hotelId, numberOfNights],
+  // ✅ PayOS: Tạo payment link
+  const { data: paymentLinkData, isLoading: isLoadingPayment } = useQuery({
+    queryKey: ["createPayOSPaymentLink", hotelId, numberOfNights],
     queryFn: () =>
-      apiClient.createPaymentIntent(
+      apiClient.createPayOSPaymentLink(
         hotelId as string,
-        numberOfNights.toString()
+        numberOfNights
       ),
     enabled: !!hotelId && numberOfNights > 0,
   });
@@ -145,7 +144,7 @@ const Booking = () => {
                       {hotel.starRating} Stars
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      £{hotel.pricePerNight}/night
+                      {formatVND(hotel.pricePerNight)}/đêm
                     </Badge>
                   </div>
                   {hotel.type && hotel.type.length > 0 && (
@@ -177,22 +176,14 @@ const Booking = () => {
                   </div>
                 </CardContent>
               </Card>
-            ) : currentUser && paymentIntentData ? (
+            ) : currentUser && paymentLinkData ? (
               <Card className="shadow-lg border-0 bg-white">
                 <CardContent className="p-0">
-                  {/* Stripe đã được xóa - dùng PayOS thay thế */}
-                  {/* <Elements
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret: paymentIntentData.clientSecret,
-                    }}
-                    key={paymentIntentData.clientSecret}
-                  > */}
-                    <BookingForm
-                      currentUser={currentUser}
-                      paymentIntent={paymentIntentData}
-                    />
-                  {/* </Elements> */}
+                  {/* ✅ PayOS: Dùng BookingFormPayOS thay vì Stripe */}
+                  <BookingFormPayOS
+                    currentUser={currentUser}
+                    paymentLink={paymentLinkData}
+                  />
                 </CardContent>
               </Card>
             ) : (

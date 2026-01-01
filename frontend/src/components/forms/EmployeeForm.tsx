@@ -77,7 +77,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }: EmployeeFormProps) => {
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<EmployeeFormData>) =>
-      apiClient.updateEmployee(employee!._id, data),
+      apiClient.updateUser(employee!._id, data),
     onSuccess: () => {
       showToast({
         title: "Employee Updated",
@@ -87,21 +87,57 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }: EmployeeFormProps) => {
       onSuccess();
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update employee.";
+      const statusCode = error.response?.status;
+
+      // Hiển thị lỗi chi tiết hơn
+      let description = errorMessage;
+      if (statusCode === 401) {
+        description = "Unauthorized: Token hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.";
+      } else if (statusCode === 403) {
+        description = "Forbidden: Bạn không có quyền cập nhật employee này.";
+      } else if (statusCode === 404) {
+        description = "Not Found: Không tìm thấy employee.";
+      }
+
       showToast({
         title: "Update Failed",
-        description: error.response?.data?.message || "Failed to update employee.",
+        description: description,
         type: "ERROR",
+      });
+
+      // Log chi tiết để debug
+      console.error("❌ Update Employee Error:", {
+        status: statusCode,
+        message: errorMessage,
+        response: error.response?.data,
       });
     },
   });
 
-  const onSubmit = (data: EmployeeFormData) => {
+  const onSubmit = async (data: EmployeeFormData) => {
     if (isEditing) {
-      // Update - không gửi password nếu không thay đổi
+      // Update - xử lý password riêng
       const updateData: any = { ...data };
-      if (!data.password || data.password === "") {
-        delete updateData.password;
+
+      // Nếu có password mới → update password qua API riêng
+      if (data.password && data.password !== "") {
+        try {
+          await apiClient.updateUserPassword(employee!._id, data.password);
+        } catch (error: any) {
+          showToast({
+            title: "Password Update Failed",
+            description: error.response?.data?.message || "Failed to update password.",
+            type: "ERROR",
+          });
+          return;
+        }
       }
+
+      // Xóa password khỏi updateData (backend không nhận password qua endpoint này)
+      delete updateData.password;
+
+      // Update các thông tin khác
       updateMutation.mutate(updateData);
     } else {
       // Create - password là bắt buộc
@@ -235,8 +271,8 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }: EmployeeFormProps) => {
           {createMutation.isPending || updateMutation.isPending
             ? "Saving..."
             : isEditing
-            ? "Update Employee"
-            : "Create Employee"}
+              ? "Update Employee"
+              : "Create Employee"}
         </Button>
         <Button
           type="button"

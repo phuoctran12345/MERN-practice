@@ -230,10 +230,10 @@ const AnalyticsSection = () => {
               <span className="font-black text-black">
                 {dashboardData?.recentRevenue && dashboardData?.recentBookings
                   ? formatVND(
-                      Math.round(
-                        dashboardData.recentRevenue / dashboardData.recentBookings
-                      )
+                    Math.round(
+                      dashboardData.recentRevenue / dashboardData.recentBookings
                     )
+                  )
                   : formatVND(0)}
               </span>
             </div>
@@ -265,11 +265,10 @@ const AnalyticsSection = () => {
             <div className="flex justify-between items-center">
               <span className="font-bold">Trend</span>
               <span
-                className={`font-black ${
-                  (dashboardData?.revenueGrowth || 0) >= 0
+                className={`font-black ${(dashboardData?.revenueGrowth || 0) >= 0
                     ? "text-green-600"
                     : "text-red-600"
-                }`}
+                  }`}
               >
                 {(dashboardData?.revenueGrowth || 0) >= 0 ? "↑" : "↓"}{" "}
                 {Math.abs(dashboardData?.revenueGrowth || 0).toFixed(1)}%

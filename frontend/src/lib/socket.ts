@@ -18,10 +18,10 @@ export const initSocket = (): Socket => {
   });
 
   socket.on("connect", () => {
-    // Socket connected - chỉ log trong development
-    if (import.meta.env.DEV) {
-      console.log("✅ Socket.IO connected");
-    }
+    // Đã tắt log để giảm noise trong console
+    // if (import.meta.env.DEV) {
+    //   console.log("✅ Socket.IO connected");
+    // }
   });
 
   socket.on("disconnect", () => {
@@ -29,7 +29,8 @@ export const initSocket = (): Socket => {
   });
 
   socket.on("connect_error", (error) => {
-    console.error("❌ Socket.IO connection error:", error);
+    // Đã tắt log để giảm noise trong console
+    // console.error("❌ Socket.IO connection error:", error);
   });
 
   return socket;

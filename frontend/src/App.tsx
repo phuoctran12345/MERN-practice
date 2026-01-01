@@ -21,10 +21,15 @@ import MyBookings from "./pages/MyBookings";
 import Home from "./pages/Home";
 import ApiDocs from "./pages/ApiDocs";
 import ApiStatus from "./pages/ApiStatus";
-import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OwnerDashboardIndex from "./pages/dashboard/owner";
+import ManagerDashboardIndex from "./pages/dashboard/manager";
+import ReceptionistDashboardIndex from "./pages/dashboard/receptionist";
+import CheckInPage from "./pages/dashboard/receptionist/CheckInPage";
+import CheckOutPage from "./pages/dashboard/receptionist/CheckOutPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 
 const App = () => {
   // Lấy giá trị isLoggedIn từ Context để kiểm tra người dùng đã đăng nhập hay chưa
@@ -80,14 +85,6 @@ const App = () => {
             </Layout>
           }
         />
-        <Route
-          path="/analytics"
-          element={
-            <Layout>
-              <AnalyticsDashboard />
-            </Layout>
-          }
-        />
 
         {/* --- CÁC ROUTE XÁC THỰC (Đăng ký/Đăng nhập) --- */}
         <Route
@@ -104,6 +101,24 @@ const App = () => {
             <AuthLayout>
               <SignIn />
             </AuthLayout>
+          }
+        />
+
+        {/* --- PAYMENT ROUTES (Public - PayOS redirect) --- */}
+        <Route
+          path="/booking/success"
+          element={
+            <Layout>
+              <PaymentSuccess />
+            </Layout>
+          }
+        />
+        <Route
+          path="/booking/cancel"
+          element={
+            <Layout>
+              <PaymentCancel />
+            </Layout>
           }
         />
 
@@ -162,6 +177,50 @@ const App = () => {
             <ProtectedRoute requireAuth allowedRoles={["hotel_owner"]}>
               <DashboardLayout>
                 <OwnerDashboardIndex />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* --- MANAGER DASHBOARD ROUTES --- */}
+        <Route
+          path="/dashboard/manager/*"
+          element={
+            <ProtectedRoute requireAuth allowedRoles={["manager"]}>
+              <DashboardLayout>
+                <ManagerDashboardIndex />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* --- RECEPTIONIST DASHBOARD ROUTES --- */}
+        <Route
+          path="/dashboard/receptionist/check-in"
+          element={
+            <ProtectedRoute requireAuth allowedRoles={["receptionist"]}>
+              <DashboardLayout>
+                <CheckInPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/receptionist/check-out"
+          element={
+            <ProtectedRoute requireAuth allowedRoles={["receptionist"]}>
+              <DashboardLayout>
+                <CheckOutPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/receptionist/*"
+          element={
+            <ProtectedRoute requireAuth allowedRoles={["receptionist"]}>
+              <DashboardLayout>
+                <ReceptionistDashboardIndex />
               </DashboardLayout>
             </ProtectedRoute>
           }

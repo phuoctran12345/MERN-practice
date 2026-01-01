@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../../../api-client";
 import { UserType } from "../../../../../shared/types";
-import { Users, Plus, Edit, Trash2, Search, Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Edit, Trash2, Search, Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import useAppContext from "../../../hooks/useAppContext";
+import { useUserStore } from "../../../stores/userStore";
 import UserForm from "../../../components/forms/UserForm";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import { initSocket } from "../../../lib/socket";
@@ -17,7 +18,11 @@ import { initSocket } from "../../../lib/socket";
  */
 const UsersSection = () => {
     const { showToast } = useAppContext();
+    const { currentUser } = useUserStore();
     const queryClient = useQueryClient();
+
+    // Lấy companyId của owner hiện tại
+    const ownerCompanyId = currentUser?.companyId;
 
     // ============================================
     // STATE MANAGEMENT
@@ -28,7 +33,6 @@ const UsersSection = () => {
     const [searchTerm, setSearchTerm] = useState(""); // Dùng trong query (debounced)
     const [roleFilter, setRoleFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [showAddForm, setShowAddForm] = useState(false);
     const [editingUser, setEditingUser] = useState<UserType | null>(null);
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -91,12 +95,13 @@ const UsersSection = () => {
     }, [queryClient]);
 
     // ============================================
-    // FETCH USERS TỪ BACKEND
+    // FETCH CUSTOMERS TỪ BACKEND
     // ============================================
+    // CHỈ LẤY CUSTOMERS (role = "user") ĐÃ ĐẶT PHÒNG Ở HOTELS CỦA CÔNG TY OWNER
+    // Backend sẽ tự động filter: chỉ lấy customers có bookings ở hotels của companyId
     // Backend trả về: { message, users: [...], pagination: {...} }
-    // Nếu muốn hiển thị TẤT CẢ users → set roleFilter = "all" và statusFilter = "all"
     const { data: usersData, isLoading } = useQuery({
-        queryKey: ["getAllUsers", roleFilter, statusFilter, searchTerm, currentPage],
+        queryKey: ["getAllUsers", "customers", ownerCompanyId, roleFilter, statusFilter, searchTerm, currentPage],
         queryFn: () => {
             // Chuẩn bị params để gửi lên backend
             const params: {
@@ -105,15 +110,29 @@ const UsersSection = () => {
                 search?: string;
                 page?: number;
                 limit: number;
+                companyId?: string;
             } = {
                 page: currentPage,
                 limit: pageSize, // Số users mỗi trang
             };
 
-            // Chỉ gửi filter lên backend nếu không phải "all"
+            // CHỈ LẤY CUSTOMERS (role = "user") - KHÔNG LẤY EMPLOYEES
+            // Nếu roleFilter = "all" → vẫn chỉ lấy "user"
             if (roleFilter && roleFilter !== "all") {
-                params.role = roleFilter;
+                // Nếu chọn role cụ thể, chỉ lấy role đó (nhưng phải là "user")
+                if (roleFilter === "user") {
+                    params.role = "user";
+                }
+            } else {
+                // Mặc định: chỉ lấy customers (role = "user")
+                params.role = "user";
             }
+
+            // Gửi companyId để backend filter customers đã đặt phòng ở hotels của công ty
+            if (ownerCompanyId) {
+                params.companyId = ownerCompanyId;
+            }
+
             if (statusFilter && statusFilter !== "all") {
                 params.isActive = statusFilter === "active";
             }
@@ -123,6 +142,7 @@ const UsersSection = () => {
 
             return apiClient.getAllUsers(params);
         },
+        enabled: true, // Luôn fetch (nếu không có companyId, backend sẽ trả về tất cả customers)
         // ============================================
         // QUERY OPTIONS - TRÁNH REFETCH KHÔNG CẦN THIẾT
         // ============================================
@@ -178,18 +198,25 @@ const UsersSection = () => {
     // ============================================
     // Backend trả về: { message, users: [...], pagination: {...} }
     // Lấy mảng users từ response
-    const users = Array.isArray(usersData?.users)
+    const allUsers = Array.isArray(usersData?.users)
         ? usersData.users
         : Array.isArray(usersData)
             ? usersData
             : [];
 
     // ============================================
-    // FILTER USERS THEO SEARCH TERM
+    // FILTER CHỈ LẤY CUSTOMERS (role = "user")
+    // ============================================
+    // CHỈ HIỂN THỊ CUSTOMERS - NHỮNG NGƯỜI SỬ DỤNG DỊCH VỤ
+    // KHÔNG HIỂN THỊ EMPLOYEES (manager, receptionist, hotel_owner)
+    const customers = allUsers.filter((user: any) => user.role === "user");
+
+    // ============================================
+    // FILTER CUSTOMERS THEO SEARCH TERM
     // ============================================
     // Backend đã filter theo roleFilter và statusFilter rồi
     // Frontend chỉ cần filter theo search term (tìm kiếm tên, email)
-    const filteredUsers = users.filter((user: UserType) => {
+    const filteredUsers = customers.filter((user: UserType) => {
         // Nếu không có search term → hiển thị tất cả users
         if (!searchTerm) return true;
 
@@ -363,7 +390,8 @@ const UsersSection = () => {
                 <div className="bg-yellow-100 border-4 border-black p-4 text-sm mb-4">
                     <p className="font-bold mb-2">🔍 Debug Info:</p>
                     <div className="grid grid-cols-2 gap-2">
-                        <p><strong>Total users from API:</strong> {users.length}</p>
+                        <p><strong>Total users from API:</strong> {allUsers.length}</p>
+                        <p><strong>Total customers (role = "user"):</strong> {customers.length}</p>
                         <p><strong>Filtered users (after search):</strong> {filteredUsers.length}</p>
                         <p><strong>Role Filter:</strong> {roleFilter}</p>
                         <p><strong>Status Filter:</strong> {statusFilter}</p>

@@ -30,6 +30,7 @@ export type UserType = {
   totalBookings?: number;
   totalSpent?: number;
   lastLogin?: Date;
+  companyId?: string; // ID công ty (cho employees: manager, receptionist, hotel_owner)
   isActive?: boolean;
   emailVerified?: boolean;
   createdAt?: Date;
@@ -149,10 +150,20 @@ export type HotelSearchResponse = {
   };
 };
 
+// ⚠️ DEPRECATED: Stripe Payment Intent (giữ lại để tương thích tạm thời)
 export type PaymentIntentResponse = {
   paymentIntentId: string;
   clientSecret: string;
   totalCost: number;
+};
+
+// ✅ PayOS Payment Link Response
+export type PayOSPaymentLinkResponse = {
+  paymentLinkId: string;
+  checkoutUrl: string; // URL để redirect khách hàng đến PayOS checkout
+  orderCode: number; // PayOS Order Code
+  totalCost: number;
+  qrCode?: string; // QR code để quét (optional)
 };
 
 /**
@@ -188,6 +199,22 @@ export type PromotionType = {
   maxUsage?: number;
   currentUsage?: number;
   isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+/**
+ * TYPE: ServiceRequestType - Định nghĩa cấu trúc yêu cầu dịch vụ
+ */
+export type ServiceRequestType = {
+  _id: string;
+  bookingId: string;
+  userId: string;
+  hotelId: string;
+  serviceType: "room_service" | "laundry" | "cleaning" | "food" | "transport" | "minibar" | "other";
+  description: string;
+  price?: number;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
   createdAt?: Date;
   updatedAt?: Date;
 };

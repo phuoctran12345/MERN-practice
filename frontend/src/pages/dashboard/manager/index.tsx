@@ -1,40 +1,37 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import OwnerDashboard from "./OwnerDashboard";
-import HotelsSection from "./HotelsSection";
-import EmployeesSection from "./EmployeesSection";
-import PromotionsSection from "./PromotionsSection";
-import AnalyticsSection from "./AnalyticsSection";
-import UsersSection from "./UsersSection";
-import PaymentsSection from "./PaymentsSection";
+import ManagerDashboard from "./ManagerDashboard";
+import BookingsSection from "./BookingsSection";
+import HotelsSection from "../owner/HotelsSection";
+import PromotionsSection from "../owner/PromotionsSection";
+import EmployeesSection from "../owner/EmployeesSection"; // UC 13: Manager có quyền quản lý employees
+import AnalyticsSection from "../owner/AnalyticsSection";
 
 /**
- * Owner Dashboard Index Component
+ * Manager Dashboard Index Component
  * Component gốc hiển thị TẤT CẢ sections cùng lúc
  * URL sẽ quyết định section nào được scroll đến và highlight
  */
-const OwnerDashboardIndex = () => {
+const ManagerDashboardIndex = () => {
     const location = useLocation();
 
     // Refs để scroll đến section tương ứng
     const dashboardRef = useRef<HTMLDivElement>(null);
+    const bookingsRef = useRef<HTMLDivElement>(null);
     const hotelsRef = useRef<HTMLDivElement>(null);
-    const employeesRef = useRef<HTMLDivElement>(null);
+    const employeesRef = useRef<HTMLDivElement>(null); // UC 13: Manager có quyền quản lý employees
     const promotionsRef = useRef<HTMLDivElement>(null);
     const analyticsRef = useRef<HTMLDivElement>(null);
-    const usersRef = useRef<HTMLDivElement>(null);
-    const paymentsRef = useRef<HTMLDivElement>(null);
 
     // Map URL path đến ref tương ứng
     const pathToRef: Record<string, React.RefObject<HTMLDivElement>> = {
-        "/dashboard/owner": dashboardRef,
-        "/dashboard/owner/": dashboardRef,
-        "/dashboard/owner/hotels": hotelsRef,
-        "/dashboard/owner/employees": employeesRef,
-        "/dashboard/owner/promotions": promotionsRef,
-        "/dashboard/owner/analytics": analyticsRef,
-        "/dashboard/owner/users": usersRef,
-        "/dashboard/owner/payments": paymentsRef,
+        "/dashboard/manager": dashboardRef,
+        "/dashboard/manager/": dashboardRef,
+        "/dashboard/manager/bookings": bookingsRef,
+        "/dashboard/manager/hotels": hotelsRef, // UC 11: Quản lý Danh mục Phòng & KS
+        "/dashboard/manager/employees": employeesRef, // UC 13: Quản lý Tài khoản Nhân viên
+        "/dashboard/manager/promotions": promotionsRef, // UC 12: Quản lý Giá & Khuyến mãi
+        "/dashboard/manager/analytics": analyticsRef, // UC 14: Xem Báo cáo Thống kê
     };
 
     // Scroll đến section tương ứng khi URL thay đổi
@@ -61,10 +58,19 @@ const OwnerDashboardIndex = () => {
                 id="dashboard"
                 className="scroll-mt-8"
             >
-                <OwnerDashboard />
+                <ManagerDashboard />
             </div>
 
-            {/* Hotels Section */}
+            {/* Bookings Section */}
+            <div
+                ref={bookingsRef}
+                id="bookings"
+                className="scroll-mt-8"
+            >
+                <BookingsSection />
+            </div>
+
+            {/* Hotels Section - UC 11: Quản lý Danh mục Phòng & KS */}
             <div
                 ref={hotelsRef}
                 id="hotels"
@@ -73,7 +79,7 @@ const OwnerDashboardIndex = () => {
                 <HotelsSection />
             </div>
 
-            {/* Employees Section */}
+            {/* Employees Section - UC 13: Quản lý Tài khoản Nhân viên */}
             <div
                 ref={employeesRef}
                 id="employees"
@@ -99,26 +105,9 @@ const OwnerDashboardIndex = () => {
             >
                 <AnalyticsSection />
             </div>
-
-            {/* Users Section */}
-            <div
-                ref={usersRef}
-                id="users"
-                className="scroll-mt-8"
-            >
-                <UsersSection />
-            </div>
-
-            {/* Payments Section */}
-            <div
-                ref={paymentsRef}
-                id="payments"
-                className="scroll-mt-8"
-            >
-                <PaymentsSection />
-            </div>
         </div>
     );
 };
 
-export default OwnerDashboardIndex;
+export default ManagerDashboardIndex;
+

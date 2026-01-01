@@ -26,13 +26,17 @@ router.post(
   "/register",                          // Path: /api/users/register
   [
     // Validation rules: email phải là email hợp lệ, password phải có ít nhất 6 ký tự
-
     check("firstName", "First name is required").notEmpty(),
     check("lastName", "Last name is required").notEmpty(),
     check("email", "Email is required").isEmail(),
     check("password", "Password with 6 or more characters required").isLength({
       min: 6,
     }),
+    // Role là optional, nếu có thì phải là một trong các giá trị hợp lệ
+    check("role")
+      .optional()
+      .isIn(["user", "admin", "hotel_owner", "receptionist", "manager"])
+      .withMessage("Role phải là: user, admin, hotel_owner, receptionist, hoặc manager"),
   ],
 
   //Custom Validation middleware: Xử lý kết quả validation
@@ -87,6 +91,27 @@ router.delete(
   verifyToken,
   roleCheck(["hotel_owner"]),
   userController.deleteUser
+);
+
+//======================================================
+// PATCH /api/users/:id/password - Đổi mật khẩu user (Owner only)
+router.patch(
+  "/:id/password",
+  verifyToken,
+  roleCheck(["hotel_owner"]),
+  [
+    check("newPassword", "Mật khẩu mới phải có ít nhất 6 ký tự").isLength({
+      min: 6,
+    }),
+  ],
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
+    next();
+  },
+  userController.updateUserPassword
 );
 
 //======================================================

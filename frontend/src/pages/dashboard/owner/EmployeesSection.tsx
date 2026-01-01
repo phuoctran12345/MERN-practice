@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import useAppContext from "../../../hooks/useAppContext";
+import { useUserStore } from "../../../stores/userStore";
 import EmployeeForm from "../../../components/forms/EmployeeForm";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import { initSocket } from "../../../lib/socket";
@@ -20,6 +21,7 @@ import { initSocket } from "../../../lib/socket";
  */
 const EmployeesSection = () => {
     const { showToast } = useAppContext();
+    const { currentUser } = useUserStore();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -28,6 +30,9 @@ const EmployeesSection = () => {
     const [editingEmployee, setEditingEmployee] = useState<EmployeeType | null>(
         null
     );
+    
+    // Lấy companyId của owner hiện tại
+    const ownerCompanyId = currentUser?.companyId;
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -66,23 +71,28 @@ const EmployeesSection = () => {
     }, [queryClient]);
 
     // ============================================
-    // FETCH USERS TỪ BACKEND
+    // FETCH EMPLOYEES TỪ BACKEND
     // ============================================
-    // Dùng API /api/users thay vì /api/v2/employees để lấy TẤT CẢ users
+    // CHỈ LẤY EMPLOYEES (manager, receptionist) CÓ CÙNG companyId VỚI OWNER
     // Backend trả về: { message, users: [...], pagination: {...} }
     const { data: employeesData, isLoading } = useQuery({
-        queryKey: ["getAllUsers", roleFilter, statusFilter],
+        queryKey: ["getAllUsers", "employees", ownerCompanyId, roleFilter, statusFilter],
         queryFn: () =>
             apiClient.getAllUsers({
+                // CHỈ LẤY EMPLOYEES (không lấy customers)
+                // Nếu roleFilter = "all" → backend sẽ tự động filter employees khi có companyId
                 role: roleFilter !== "all" ? roleFilter : undefined,
+                // Lọc theo companyId của owner (chỉ lấy employees cùng công ty)
+                companyId: ownerCompanyId || undefined,
                 isActive: statusFilter !== "all" ? statusFilter === "active" : undefined,
-                limit: 1000, // Lấy tất cả users
+                limit: 1000, // Lấy tất cả employees
             }),
+        enabled: true, // Luôn fetch (nếu không có companyId, backend sẽ trả về tất cả employees)
     });
 
-    // Delete employee mutation (Soft delete - Deactivate)
+    // Delete employee mutation (Soft delete - Deactivate) - Dùng API users
     const deleteMutation = useMutation({
-        mutationFn: apiClient.deleteEmployee,
+        mutationFn: apiClient.deleteUser,
         onSuccess: () => {
             showToast({
                 title: "Employee Deactivated",
@@ -100,9 +110,9 @@ const EmployeesSection = () => {
         },
     });
 
-    // Activate employee mutation
+    // Activate employee mutation - Dùng API users
     const activateMutation = useMutation({
-        mutationFn: apiClient.activateEmployee,
+        mutationFn: apiClient.activateUser,
         onSuccess: () => {
             showToast({
                 title: "Employee Activated",
@@ -124,14 +134,27 @@ const EmployeesSection = () => {
     // XỬ LÝ DATA TỪ BACKEND
     // ============================================
     // Backend trả về: { message, users: [...], pagination: {...} }
-    // Lấy mảng users từ response
-    const employees = Array.isArray(employeesData?.users)
+    // Lấy mảng users từ response và filter CHỈ LẤY EMPLOYEES (manager, receptionist)
+    const allUsers = Array.isArray(employeesData?.users)
         ? employeesData.users
         : Array.isArray(employeesData?.employees)
             ? employeesData.employees
             : Array.isArray(employeesData)
                 ? employeesData
                 : [];
+    
+    // CHỈ LẤY EMPLOYEES (manager, receptionist) - KHÔNG LẤY CUSTOMERS
+    const employees = allUsers.filter((user: any) => {
+        const isEmployee = ["manager", "receptionist", "hotel_owner"].includes(user.role);
+        // Nếu có companyId, chỉ lấy employees cùng companyId với owner
+        if (ownerCompanyId) {
+            return isEmployee && user.companyId === ownerCompanyId;
+        }
+        // Nếu owner chưa có companyId, lấy tất cả employees
+        return isEmployee;
+    });
+    
+    // Filter theo search term
     const filteredEmployees = employees.filter((emp: EmployeeType) => {
         const matchesSearch =
             emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||

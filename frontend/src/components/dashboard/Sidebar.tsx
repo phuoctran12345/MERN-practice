@@ -8,6 +8,10 @@ import {
   Menu,
   X,
   UserCircle,
+  BookOpen,
+  AlertCircle,
+  CheckCircle,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { useUserStore } from "../../stores/userStore";
@@ -33,6 +37,7 @@ const Sidebar = () => {
 
   // Menu items theo role
   const menuItems: MenuItem[] = [
+    // Owner menu
     {
       label: "Dashboard",
       icon: LayoutDashboard,
@@ -68,6 +73,80 @@ const Sidebar = () => {
       icon: UserCircle,
       path: "/dashboard/owner/users",
       roles: ["hotel_owner"],
+    },
+    {
+      label: "Payments",
+      icon: CreditCard,
+      path: "/dashboard/owner/payments",
+      roles: ["hotel_owner"],
+    },
+    // Manager menu
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard/manager",
+      roles: ["manager"],
+    },
+    {
+      label: "Bookings",
+      icon: BookOpen,
+      path: "/dashboard/manager/bookings",
+      roles: ["manager"],
+    },
+    {
+      label: "Hotels",
+      icon: Hotel,
+      path: "/dashboard/manager/hotels",
+      roles: ["manager"],
+    },
+    {
+      label: "Employees",
+      icon: Users,
+      path: "/dashboard/manager/employees",
+      roles: ["manager"],
+    },
+    {
+      label: "Promotions",
+      icon: Tag,
+      path: "/dashboard/manager/promotions",
+      roles: ["manager"],
+    },
+    {
+      label: "Analytics",
+      icon: BarChart3,
+      path: "/dashboard/manager/analytics",
+      roles: ["manager"],
+    },
+    // Receptionist menu
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard/receptionist",
+      roles: ["receptionist"],
+    },
+    {
+      label: "Bookings",
+      icon: BookOpen,
+      path: "/dashboard/receptionist/bookings",
+      roles: ["receptionist"],
+    },
+    {
+      label: "Service Requests",
+      icon: AlertCircle,
+      path: "/dashboard/receptionist/service-requests",
+      roles: ["receptionist"],
+    },
+    {
+      label: "Check-in",
+      icon: CheckCircle,
+      path: "/dashboard/receptionist/check-in",
+      roles: ["receptionist"],
+    },
+    {
+      label: "Check-out",
+      icon: LogOut,
+      path: "/dashboard/receptionist/check-out",
+      roles: ["receptionist"],
     },
   ];
 
@@ -109,7 +188,9 @@ const Sidebar = () => {
         {/* Logo */}
         <div className="p-6 border-b-4 border-black">
           <h2 className="text-2xl font-black text-black uppercase">
-            Owner Panel
+            {userRole === "hotel_owner" && "Owner Panel"}
+            {userRole === "manager" && "Manager Panel"}
+            {userRole === "receptionist" && "Receptionist Panel"}
           </h2>
         </div>
 
@@ -127,10 +208,9 @@ const Sidebar = () => {
                 className={`
                   flex items-center gap-3 px-4 py-3 font-bold text-sm uppercase
                   transition-all duration-150
-                  ${
-                    active
-                      ? "bg-black text-white"
-                      : "bg-white text-black border-4 border-black hover:bg-yellow-100"
+                  ${active
+                    ? "bg-black text-white"
+                    : "bg-white text-black border-4 border-black hover:bg-yellow-100"
                   }
                 `}
                 style={{

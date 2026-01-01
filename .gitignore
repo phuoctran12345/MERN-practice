@@ -101,6 +101,9 @@ data/hotel_images/*.gif
 data/hotel_images/*.webp
 !data/hotel_images/.gitkeep
 
+/Users/tranhongphuoc/Documents/Workspace/Workspace/NodeJS/MERN project/.cursor
+/Users/tranhongphuoc/Documents/Workspace/Workspace/NodeJS/MERN project/md
+
 # SSL/TLS Certificates
 *.crt
 *.cer

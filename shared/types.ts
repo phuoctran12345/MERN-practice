@@ -42,6 +42,7 @@ export type UserType = {
  */
 export type HotelType = {
   _id: string;
+  companyId?: string; // ID công ty quản lý khách sạn
   userId: string; // ID của chủ sở hữu (Owner)
   name: string;
   city: string;

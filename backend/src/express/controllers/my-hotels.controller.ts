@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import multer from "multer";
 import cloudinary from "cloudinary";
 import Hotel from "../../models/hotel";
-import { HotelType } from "types";
+import { HotelType } from "../../shared/types";
 
 
 // ============================================

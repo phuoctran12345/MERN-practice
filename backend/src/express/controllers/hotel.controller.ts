@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Hotel from "../../models/hotel";
 import Booking from "../../models/booking";
 import User from "../../models/user";
-import { BookingType, HotelSearchResponse } from "types";
+import { BookingType, HotelSearchResponse } from "../../shared/types";
 // ❌ XÓA Stripe
 // import Stripe from "stripe";
 // const stripe = new Stripe(process.env.STRIPE_API_KEY as string);

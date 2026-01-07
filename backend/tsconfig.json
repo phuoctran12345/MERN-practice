@@ -4,7 +4,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "*": ["../shared/*", "node_modules/*"] 
+      "*": ["../shared/*", "node_modules/*"],
+      "types": ["../shared/types"]
     },
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */

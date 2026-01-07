@@ -1,11 +1,28 @@
 import { PayOS } from "@payos/node";
 
-// Khởi tạo PayOS instance
-const payos = new PayOS({
-  clientId: process.env.PAYOS_CLIENT_ID as string,
-  apiKey: process.env.PAYOS_API_KEY as string,
-  checksumKey: process.env.PAYOS_CHECKSUM_KEY as string,
-});
+// Lazy initialization - chỉ khởi tạo khi cần dùng
+let payosInstance: PayOS | null = null;
+
+const getPayOS = (): PayOS => {
+  if (!payosInstance) {
+    const clientId = process.env.PAYOS_CLIENT_ID;
+    const apiKey = process.env.PAYOS_API_KEY;
+    const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
+
+    if (!clientId || !apiKey || !checksumKey) {
+      throw new Error(
+        "PayOS environment variables are missing. Please set PAYOS_CLIENT_ID, PAYOS_API_KEY, and PAYOS_CHECKSUM_KEY"
+      );
+    }
+
+    payosInstance = new PayOS({
+      clientId,
+      apiKey,
+      checksumKey,
+    });
+  }
+  return payosInstance;
+};
 
 export interface PaymentLinkData {
   orderCode: number;        // Mã đơn hàng (unique)
@@ -26,6 +43,7 @@ export interface PaymentLinkData {
  */
 export const createPaymentLink = async (data: PaymentLinkData) => {
   try {
+    const payos = getPayOS();
     // ✅ PayOS API chính thức: paymentRequests.create()
     const paymentLink = await payos.paymentRequests.create({
       orderCode: data.orderCode,
@@ -49,6 +67,7 @@ export const createPaymentLink = async (data: PaymentLinkData) => {
  */
 export const verifyWebhook = (webhookData: any) => {
   try {
+    const payos = getPayOS();
     // ✅ PayOS API chính thức: webhooks.verify()
     // Method này sẽ throw error nếu webhook không hợp lệ
     const verifiedData = payos.webhooks.verify(webhookData);
@@ -66,6 +85,7 @@ export const verifyWebhook = (webhookData: any) => {
  */
 export const getPaymentInfo = async (orderCode: number) => {
   try {
+    const payos = getPayOS();
     // ✅ PayOS API chính thức: paymentRequests.get() hoặc getPaymentLinkInformation()
     // Dùng type assertion vì TypeScript có thể không có type definition đầy đủ
     const paymentRequests = payos.paymentRequests as any;
@@ -84,5 +104,5 @@ export const getPaymentInfo = async (orderCode: number) => {
   }
 };
 
-export default payos;
+export default getPayOS;
 

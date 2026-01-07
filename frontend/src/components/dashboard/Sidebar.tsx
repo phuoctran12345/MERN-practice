@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { useUserStore } from "../../stores/userStore";

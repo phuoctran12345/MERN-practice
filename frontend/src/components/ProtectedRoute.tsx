@@ -30,12 +30,14 @@ const ProtectedRoute = ({
   const { isLoggedIn, checkAuth } = useAuthStore();
   const { getUserRole, isCustomer } = useUserStore();
 
-  // Validate token và cập nhật auth state
+  // ✅ FIX: Chỉ validate token khi có token trong localStorage (tránh lỗi 401 không cần thiết)
+  const token = localStorage.getItem("session_id");
   const { isLoading } = useQuery({
     queryKey: ["validateToken"],
     queryFn: apiClient.validateToken,
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !!token, // ✅ CHỈ chạy khi có token
   });
 
   // Check auth từ localStorage nếu query chưa chạy

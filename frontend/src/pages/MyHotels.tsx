@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
+import { formatVND } from "../utils/formatCurrency";
 import { BsBuilding, BsMap } from "react-icons/bs";
 import { BiHotel, BiMoney } from "react-icons/bi";
 import {
@@ -179,7 +180,7 @@ const MyHotels = () => {
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col space-y-2">
                 <Badge className="bg-primary-600 text-white">
-                  £{hotel.pricePerNight}/night
+                  {formatVND(hotel.pricePerNight)}/đêm
                 </Badge>
                 {hotel.isFeatured && (
                   <Badge className="bg-yellow-500 text-white">Featured</Badge>
@@ -237,7 +238,7 @@ const MyHotels = () => {
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <BiMoney className="w-4 h-4 text-primary-600" />
-                  <span>£{hotel.pricePerNight} per night</span>
+                  <span>{formatVND(hotel.pricePerNight)}/đêm</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <BiHotel className="w-4 h-4 text-primary-600" />
@@ -257,7 +258,7 @@ const MyHotels = () => {
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-bold text-gray-900">
-                    £{(hotel.totalRevenue || 0).toLocaleString()}
+                    {formatVND(hotel.totalRevenue || 0)}
                   </p>
                   <p className="text-xs text-gray-600">Revenue</p>
                 </div>

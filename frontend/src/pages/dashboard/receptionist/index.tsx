@@ -75,3 +75,5 @@ const ReceptionistDashboardIndex = () => {
 
 export default ReceptionistDashboardIndex;
 
+
+

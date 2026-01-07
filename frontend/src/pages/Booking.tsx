@@ -16,8 +16,6 @@ import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 import { formatVND } from "../utils/formatCurrency";
 
 const Booking = () => {
-  // Stripe đã được xóa - không dùng nữa
-  // const { stripePromise } = useAppContext();
   const search = useSearchContext();
   const { hotelId } = useParams();
 
@@ -29,7 +27,8 @@ const Booking = () => {
         Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) /
         (1000 * 60 * 60 * 24);
 
-      setNumberOfNights(Math.ceil(nights));
+      // ✅ FIX: Nếu cùng ngày hoặc < 1 đêm, mặc định là 1 đêm (minimum booking)
+      setNumberOfNights(Math.max(1, Math.ceil(nights)));
     }
   }, [search.checkIn, search.checkOut]);
 

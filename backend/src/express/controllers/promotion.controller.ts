@@ -354,3 +354,128 @@ export const incrementPromotionUsage = async (req: Request, res: Response) => {
   }
 };
 
+
+
+// ============================================
+// GET /api/v2/promotions/validate
+// Validate promotion code và tính toán discount (Public - không cần auth)
+export const validatePromotionCode = async (req: Request, res: Response) => {
+  try {
+    const { code , hotelId, checkIn, checkOut, numberOfNights , totalCost} = req.body;
+
+    //validate input
+    if (!code || !hotelId || !checkIn || !checkOut || !numberOfNights ||  !totalCost) {
+      return res.status(400).json({ 
+        message: "Dữ liệu không hợp lệ , thông tin bắt buộc code , hotelId, checkIn, checkOut, numberOfNights , totalCost" 
+      });
+    }
+
+
+
+    //Tìm promotion theo name
+    const promotion = await Promotion.findOne({ 
+      name: code ,
+      isActive:true,
+    }).exec();
+
+
+    if (!promotion) {
+      return res.status(404).json({ 
+        message: "Mã khuyến mãi không tồn tại hoặc đã bị vô hiệu hoá"
+      })
+    }
+
+    //validate date range 
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const currentDate = new Date();
+
+
+    if (checkInDate >= checkOutDate) {
+      return res.status(400).json({ 
+        message: "Ngày check-in phải trước ngày check-out"
+      });
+    }
+
+
+    if (checkInDate > currentDate) {
+      return res.status(400).json({ 
+        message: "Ngày check-in không thể là quá khứ"
+      });
+    }
+
+
+    if (promotion.endDate < currentDate) {
+      return res.status(400).json({
+        message: "Mã khuyến mãi đã hết hạn",
+        valid: false,
+      });
+    }
+
+    // Validate hotelId (nếu promotion có hotelId cụ thể)
+    if (promotion.hotelId && promotion.hotelId !== hotelId) {
+      return res.status(400).json({
+        message: "Mã khuyến mãi không áp dụng cho khách sạn này",
+        valid: false,
+      });
+    }
+
+    // Validate minStay (số đêm tối thiểu)
+    if (promotion.minStay && numberOfNights < promotion.minStay) {
+      return res.status(400).json({
+        message: `Mã khuyến mãi yêu cầu tối thiểu ${promotion.minStay} đêm`,
+        valid: false,
+      });
+    }
+
+    // Validate maxUsage (số lần sử dụng tối đa)
+    if (promotion.maxUsage && promotion.currentUsage >= promotion.maxUsage) {
+      return res.status(400).json({
+        message: "Mã khuyến mãi đã đạt giới hạn sử dụng",
+        valid: false,
+      });
+    }
+
+
+    // TÍnh toán discount amount
+    let discountAmount = 0;
+    if (promotion.discountType === "PERCENTAGE") {
+      // Giảm giá theo phần trăm 
+      discountAmount = Math.round(totalCost * (promotion.discountValue / 100));
+    } else if (promotion.discountType === "FIXED_AMOUNT") {
+      // Giảm giá theo số tiền cố định
+      discountAmount = promotion.discountValue;
+       // Đảm bảo discount không vượt quá totalCost
+      if( discountAmount > totalCost) {
+        discountAmount = totalCost;
+      }
+    }
+    // Tính final price sau khi giảm giá
+    const finalPrice = totalCost - discountAmount;
+    
+    res.status(200).json({
+      message: "Mã khuyến mãi hợp lệ",
+      valid: true,
+      promotion: {
+        _id: promotion._id,
+        name: promotion.name,
+        description: promotion.description,
+        discountType: promotion.discountType,
+        discountValue: promotion.discountValue,        
+      },
+      discountAmount,
+      finalPrice,
+      orginalPrice: totalCost,
+    })    
+
+
+
+
+  }catch (error) {
+    console.error("❌ Lỗi validatePromotionCode:", error);
+    res.status(500).json({ 
+      message: "Lỗi khi validate mã khuyến mãi",
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+};

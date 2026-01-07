@@ -126,6 +126,22 @@ export const checkIn = async (req: Request, res: Response) => {
 // ============================================
 // POST /api/v2/booking-operations/check-out
 // Thực hiện check-out
+// 
+// LOGIC XỬ LÝ PAYMENT:
+// 1. Booking đã thanh toán online (paymentStatus = "paid", paymentMethod = "online"):
+//    - Nếu có thêm chi phí (service requests + extra charges) → cần thanh toán thêm tại quầy
+//    - paymentMethod sẽ là "online, cash" hoặc "online, card" (kết hợp)
+//    - paymentStatus vẫn là "paid" (đã thanh toán đủ)
+// 
+// 2. Booking chưa thanh toán (paymentStatus = "pending"):
+//    - Thanh toán toàn bộ tại quầy
+//    - paymentMethod = "cash" hoặc "card"
+//    - paymentStatus = "paid"
+//
+// 3. Booking đã thanh toán một phần (paymentStatus = "partial" - nếu có):
+//    - Thanh toán phần còn lại tại quầy
+//    - paymentMethod kết hợp
+//    - paymentStatus = "paid"
 export const checkOut = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -133,7 +149,7 @@ export const checkOut = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: errors.array() });
     }
 
-    const { bookingId, extraCharges } = req.body;
+    const { bookingId, extraCharges, notes, paymentMethod } = req.body;
 
     // B1: Tìm booking
     const booking = await Booking.findById(bookingId);
@@ -142,7 +158,8 @@ export const checkOut = async (req: Request, res: Response) => {
     }
 
     // B2: Kiểm tra status
-    if (booking.status !== "checked_in") {
+    const bookingStatus = String(booking.status).trim().replace(/,$/, "");
+    if (bookingStatus !== "checked_in") {
       return res.status(400).json({
         message: `Booking phải ở trạng thái "checked_in" để check-out. Status hiện tại: ${booking.status}`,
       });
@@ -153,25 +170,81 @@ export const checkOut = async (req: Request, res: Response) => {
       bookingId,
       status: "completed",
     });
-    const serviceRequestsTotal = serviceRequests.reduce((sum, request) => sum + request.price, 0);
+    const serviceRequestsTotal = serviceRequests.reduce((sum, request) => sum + (request.price || 0), 0);
 
     // B4: Tính finalTotalCost
     // Lưu ý: Booking có thể có totalCost hoặc totalPrice (do dữ liệu cũ)
     const baseCost = (booking as any).totalCost || (booking as any).totalPrice || 0;
-    const additionalCharges = extraCharges || 0;
+    const additionalCharges = extraCharges ? parseFloat(extraCharges) : 0;
+    if (additionalCharges < 0) {
+      return res.status(400).json({ message: "Extra charges phải >= 0" });
+    }
     const finalTotalCost = baseCost + serviceRequestsTotal + additionalCharges;
 
-    // B5: Update room status nếu có
+    // B5: Tính số tiền đã thanh toán và số tiền cần thanh toán thêm
+    const currentPaymentStatus = String(booking.paymentStatus || "pending").trim().replace(/,$/, "");
+    const alreadyPaid = currentPaymentStatus === "paid" ? baseCost : 0;
+    const amountToPay = finalTotalCost - alreadyPaid;
+
+    // B6: Xử lý paymentMethod và paymentStatus
+    let finalPaymentMethod = booking.paymentMethod || "";
+    let finalPaymentStatus = currentPaymentStatus;
+
+    if (amountToPay > 0) {
+      // Có số tiền cần thanh toán thêm
+      if (!paymentMethod || (paymentMethod !== "cash" && paymentMethod !== "card")) {
+        return res.status(400).json({
+          message: "Cần chọn phương thức thanh toán (cash hoặc card) cho phần chi phí bổ sung",
+          amountToPay,
+        });
+      }
+
+      // Cập nhật paymentMethod
+      if (currentPaymentStatus === "paid" && booking.paymentMethod === "online") {
+        // Đã thanh toán online → thêm phương thức thanh toán tại quầy
+        finalPaymentMethod = `online, ${paymentMethod}`;
+      } else {
+        // Chưa thanh toán hoặc thanh toán một phần → dùng phương thức thanh toán tại quầy
+        finalPaymentMethod = paymentMethod;
+      }
+
+      // Sau khi thanh toán thêm → paymentStatus = "paid"
+      finalPaymentStatus = "paid";
+    } else if (amountToPay === 0) {
+      // Không có chi phí phát sinh → giữ nguyên payment status
+      // Nếu đã thanh toán online → giữ nguyên
+      // Nếu chưa thanh toán → có thể đã thanh toán đủ từ trước (edge case)
+      if (currentPaymentStatus === "paid") {
+        finalPaymentMethod = booking.paymentMethod || "online";
+        finalPaymentStatus = "paid";
+      }
+    } else {
+      // amountToPay < 0 → Lỗi logic (không nên xảy ra)
+      console.warn(`⚠️ Warning: amountToPay < 0 cho booking ${bookingId}. alreadyPaid=${alreadyPaid}, finalTotalCost=${finalTotalCost}`);
+    }
+
+    // B7: Update room status nếu có
     if (booking.roomId) {
       await Room.findByIdAndUpdate(booking.roomId, { status: "AVAILABLE" });
     }
 
-    // B6: Update booking (dùng findByIdAndUpdate để tránh mất field)
+    // B8: Update booking (dùng findByIdAndUpdate để tránh mất field)
     const updateData: any = {
       status: "completed",
       checkedOutAt: new Date(),
       finalTotalCost: finalTotalCost,
+      paymentStatus: finalPaymentStatus,
     };
+
+    // Chỉ update paymentMethod nếu có thay đổi
+    if (finalPaymentMethod) {
+      updateData.paymentMethod = finalPaymentMethod;
+    }
+
+    // Lưu notes nếu có
+    if (notes && notes.trim()) {
+      updateData.notes = notes.trim();
+    }
 
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
@@ -191,6 +264,10 @@ export const checkOut = async (req: Request, res: Response) => {
         serviceRequestsTotal,
         additionalCharges,
         finalTotalCost,
+        alreadyPaid,
+        amountToPay: amountToPay > 0 ? amountToPay : 0,
+        paymentMethod: finalPaymentMethod,
+        paymentStatus: finalPaymentStatus,
       },
       serviceRequests,
     });

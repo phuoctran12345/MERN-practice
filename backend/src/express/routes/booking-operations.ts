@@ -24,6 +24,11 @@ router.post(
   [
     body("bookingId").notEmpty().withMessage("bookingId là bắt buộc"),
     body("extraCharges").optional().isFloat({ min: 0 }).withMessage("extraCharges phải >= 0"),
+    body("notes").optional().isString().withMessage("notes phải là string"),
+    body("paymentMethod")
+      .optional()
+      .isIn(["cash", "card"])
+      .withMessage("paymentMethod phải là 'cash' hoặc 'card'"),
   ],
   bookingOperationsController.checkOut
 );

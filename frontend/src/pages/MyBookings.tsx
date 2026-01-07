@@ -2,6 +2,7 @@ import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import type { BookingType, HotelWithBookingsType } from "../../../shared/types";
 import { Badge } from "../components/ui/badge";
+import { formatVND } from "../utils/formatCurrency";
 import {
   Calendar,
   Users,
@@ -142,7 +143,7 @@ const MyBookings = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
               <span className="text-blue-100">
-                £{totalSpent.toFixed(2)} Total Spent
+                {formatVND(totalSpent)} Total Spent
               </span>
             </div>
           </div>
@@ -181,7 +182,7 @@ const MyBookings = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Building className="w-4 h-4" />
-                        <span>£{hotel.pricePerNight}/night</span>
+                        <span>{formatVND(hotel.pricePerNight)}/đêm</span>
                       </div>
                     </div>
                   </div>
@@ -334,14 +335,14 @@ const MyBookings = () => {
                                   Nights
                                 </div>
                                 <div className="text-lg font-bold text-green-600">
-                                  £{totalPrice}
+                                  {formatVND(totalPrice)}
                                 </div>
                                 {/* Only show refund if it exists and is greater than 0 */}
                                 {booking.refundAmount !== undefined &&
                                   booking.refundAmount !== null &&
                                   booking.refundAmount > 0 && (
                                     <div className="text-sm text-red-600">
-                                      Refund: £{booking.refundAmount}
+                                      Hoàn tiền: {formatVND(booking.refundAmount)}
                                     </div>
                                   )}
                               </div>

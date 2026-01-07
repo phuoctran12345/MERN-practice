@@ -59,6 +59,21 @@ router.get(
 );
 
 // ============================================
+// POST /api/v2/promotions/validate
+// Validate promotion code và tính toán discount (Public - không cần auth)
+router.post(
+  "/validate",
+  [
+    body("code").notEmpty().withMessage("Mã khuyến mãi là bắt buộc"),
+    body("hotelId").notEmpty().withMessage("Hotel ID là bắt buộc"),
+    body("checkIn").isISO8601().withMessage("Ngày check-in không hợp lệ"),
+    body("checkOut").isISO8601().withMessage("Ngày check-out không hợp lệ"),
+    body("numberOfNights").isInt({ min: 1 }).withMessage("Số đêm phải >= 1"),
+    body("totalCost").isFloat({ min: 0 }).withMessage("Tổng chi phí phải >= 0"),
+  ],
+  promotionController.validatePromotionCode
+);
+// ============================================
 // GET /api/v2/promotions/:id
 // Lấy thông tin một khuyến mãi cụ thể
 router.get(

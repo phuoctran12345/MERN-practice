@@ -3,11 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../../../api-client";
 import { BookingType } from "../../../../../shared/types";
 import { formatVND } from "../../../utils/formatCurrency";
-import { CheckCircle, Search, AlertCircle } from "lucide-react";
+import { CheckCircle, Search, Clock } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import useAppContext from "../../../hooks/useAppContext";
+import EmptyState from "../../../components/EmptyState";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../../../components/ui/dialog";
 
 /**
  * CheckInPage Component
@@ -19,6 +28,8 @@ const CheckInPage = () => {
     const [searchInput, setSearchInput] = useState("");
     const [foundBooking, setFoundBooking] = useState<BookingType | null>(null);
     const [roomId, setRoomId] = useState("");
+    const [showEarlyCheckInDialog, setShowEarlyCheckInDialog] = useState(false);
+    const [earlyCheckInDays, setEarlyCheckInDays] = useState(0);
 
     // Fetch bookings để tìm kiếm
     const { data: bookingsData } = useQuery({
@@ -32,53 +43,126 @@ const CheckInPage = () => {
             apiClient.checkIn(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["getAllBookings"] });
-            showToast("Check-in thành công!", "success");
+            showToast({
+                title: "Check-in thành công!",
+                description: "Đã cập nhật trạng thái booking thành công.",
+                type: "SUCCESS",
+            });
             setFoundBooking(null);
             setSearchInput("");
             setRoomId("");
         },
         onError: (error: any) => {
-            showToast(error?.response?.data?.message || "Có lỗi xảy ra", "error");
+            showToast({
+                title: "Check-in thất bại",
+                description: error?.response?.data?.message || "Có lỗi xảy ra khi check-in",
+                type: "ERROR",
+            });
         },
     });
 
+    /**
+     * Tìm booking theo booking code (orderCode hoặc _id) hoặc room number (roomId)
+     */
     const handleSearch = () => {
         if (!searchInput.trim()) {
-            showToast("Vui lòng nhập booking code hoặc room number", "error");
+            showToast({
+                title: "Thiếu thông tin",
+                description: "Vui lòng nhập booking code hoặc room number",
+                type: "ERROR",
+            });
             return;
         }
 
-        const booking = bookingsData?.bookings?.find(
-            (b) =>
-                b._id.toLowerCase() === searchInput.toLowerCase() ||
-                b._id.toLowerCase().includes(searchInput.toLowerCase())
-        );
+        const searchTerm = searchInput.trim().toLowerCase();
+
+        // Tìm booking theo:
+        // 1. Booking ID (_id)
+        // 2. Order Code (nếu có)
+        // 3. Room ID (nếu có)
+        const booking = bookingsData?.bookings?.find((b) => {
+            // Tìm theo _id
+            if (b._id.toLowerCase() === searchTerm || b._id.toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+
+            // Tìm theo orderCode (nếu có trong booking)
+            const bookingWithOrderCode = b as any;
+            if (bookingWithOrderCode.orderCode &&
+                String(bookingWithOrderCode.orderCode).includes(searchTerm)) {
+                return true;
+            }
+
+            // Tìm theo roomId (nếu có trong booking)
+            if (bookingWithOrderCode.roomId &&
+                String(bookingWithOrderCode.roomId).toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+
+            return false;
+        });
 
         if (booking) {
-            // Kiểm tra booking có thể check-in không
-            if (booking.status !== "confirmed") {
-                showToast(
-                    `Booking phải ở trạng thái "confirmed". Trạng thái hiện tại: ${booking.status}`,
-                    "error"
-                );
+            // ✅ Validation 1: Kiểm tra booking đã check-in chưa
+            const bookingStatus = booking.status as string;
+            if (bookingStatus === "checked_in") {
+                showToast({
+                    title: "Booking đã được check-in",
+                    description: "Booking này đã được check-in rồi. Không thể check-in lại.",
+                    type: "ERROR",
+                });
+                setFoundBooking(null);
                 return;
             }
 
+            // ✅ Validation 2: Kiểm tra status phải là "confirmed"
+            if (bookingStatus !== "confirmed") {
+                showToast({
+                    title: "Không thể check-in",
+                    description: `Booking phải ở trạng thái "confirmed". Trạng thái hiện tại: ${bookingStatus}`,
+                    type: "ERROR",
+                });
+                setFoundBooking(null);
+                return;
+            }
+
+            // ✅ Validation 3: Kiểm tra payment status
             if (booking.paymentStatus !== "paid") {
-                showToast(
-                    `Booking chưa thanh toán. PaymentStatus: ${booking.paymentStatus}`,
-                    "error"
-                );
+                showToast({
+                    title: "Booking chưa thanh toán",
+                    description: `Booking chưa thanh toán. PaymentStatus: ${booking.paymentStatus}`,
+                    type: "ERROR",
+                });
+                setFoundBooking(null);
                 return;
             }
 
+            // ✅ Validation 4: Kiểm tra early check-in (check-in trước ngày)
+            const checkInDate = new Date(booking.checkIn);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            checkInDate.setHours(0, 0, 0, 0);
+
+            const daysDiff = Math.floor((today.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysDiff < 0) {
+                // Check-in sớm (trước ngày check-in)
+                setEarlyCheckInDays(Math.abs(daysDiff));
+                setShowEarlyCheckInDialog(true);
+                setFoundBooking(booking);
+                return;
+            }
+
+            // Check-in đúng ngày hoặc sau ngày check-in → OK
             setFoundBooking(booking);
         } else {
-            showToast("Không tìm thấy booking", "error");
             setFoundBooking(null);
         }
     };
 
+    /**
+     * Xử lý check-in (có thể được gọi từ dialog early check-in hoặc button thường)
+     */
     const handleCheckIn = () => {
         if (!foundBooking) return;
 
@@ -86,6 +170,9 @@ const CheckInPage = () => {
             bookingId: foundBooking._id,
             roomId: roomId || undefined,
         });
+
+        // Đóng dialog nếu đang mở
+        setShowEarlyCheckInDialog(false);
     };
 
     return (
@@ -200,15 +287,50 @@ const CheckInPage = () => {
                 </div>
             )}
 
-            {/* No Booking Found */}
+            {/* No Booking Found - Sử dụng EmptyState */}
             {!foundBooking && searchInput && (
-                <div className="bg-yellow-100 border-4 border-black p-6 text-center" style={{ boxShadow: "8px 8px 0px 0px #000" }}>
-                    <AlertCircle className="w-12 h-12 text-yellow-800 mx-auto mb-4" />
-                    <p className="text-lg font-bold text-yellow-800">
-                        Không tìm thấy booking. Vui lòng kiểm tra lại booking code.
-                    </p>
-                </div>
+                <EmptyState
+                    icon={Search}
+                    title="Không tìm thấy booking"
+                    description="Không tìm thấy booking với mã này. Vui lòng kiểm tra lại booking code hoặc thử tìm bằng room number."
+                    size="md"
+                />
             )}
+
+            {/* ✅ Early Check-in Confirmation Dialog */}
+            <Dialog open={showEarlyCheckInDialog} onOpenChange={setShowEarlyCheckInDialog}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-orange-600">
+                            <Clock className="h-5 w-5" />
+                            Cảnh báo: Check-in sớm
+                        </DialogTitle>
+                        <DialogDescription>
+                            Khách check-in sớm {earlyCheckInDays} ngày so với ngày đặt phòng.
+                            Bạn có muốn tiếp tục check-in không?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowEarlyCheckInDialog(false);
+                                setFoundBooking(null);
+                            }}
+                            className="px-4 py-2"
+                        >
+                            Hủy
+                        </Button>
+                        <Button
+                            onClick={handleCheckIn}
+                            disabled={checkInMutation.isPending}
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700"
+                        >
+                            {checkInMutation.isPending ? "Đang xử lý..." : "Tiếp tục check-in"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

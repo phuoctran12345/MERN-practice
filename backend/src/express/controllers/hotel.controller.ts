@@ -158,15 +158,22 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         const orderCode = Date.now() + Math.floor(Math.random() * 1000);
 
         // B4: Tạo payment link từ PayOS
+        // ✅ FIX: PayOS yêu cầu description tối đa 25 ký tự
+        const description = `Đặt phòng ${numberOfNights} đêm`.substring(0, 25);
+        
+        // ✅ FIX: Đảm bảo dùng đúng port 5174 (frontend port)
+        // Nếu có FRONTEND_URL trong .env thì dùng, không thì dùng localhost:5174
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5174";
+        
         const paymentLink = await createPaymentLink({
             orderCode: orderCode,
             amount: totalCost, // VND (không cần nhân 100 như Stripe)
-            description: `Đặt phòng khách sạn ${hotel.name} - ${numberOfNights} đêm`,
-            returnUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/booking/success?orderCode=${orderCode}&hotelId=${hotelId}`,
-            cancelUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/booking/cancel`,
+            description: description, // Tối đa 25 ký tự
+            returnUrl: `${frontendUrl}/booking/success?orderCode=${orderCode}&hotelId=${hotelId}`,
+            cancelUrl: `${frontendUrl}/booking/cancel`,
             items: [
                 {
-                    name: `Phòng ${hotel.name}`,
+                    name: hotel.name.length > 50 ? hotel.name.substring(0, 50) : hotel.name, // Tên hotel có thể dài
                     quantity: 1,
                     price: totalCost,
                 },
@@ -175,7 +182,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
 
         // B5: Trả về payment link
         res.status(200).json({
-            paymentLinkId: paymentLink.id,
+            paymentLinkId: paymentLink.paymentLinkId,
             checkoutUrl: paymentLink.checkoutUrl, // URL để redirect khách hàng
             orderCode: orderCode,
             totalCost: totalCost,
@@ -194,7 +201,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
 // Lưu đơn đặt phòng vào DB sau khi thanh toán thành công qua PayOS
 export const createBooking = async (req: Request, res: Response) => {
     try {
-      const { orderCode } = req.body; // Thay paymentIntentId bằng orderCode
+      const { orderCode , promotionCode, discountAmount } = req.body; // Thay paymentIntentId bằng orderCode
 
       // Kiểm tra orderCode có tồn tại không
       if (!orderCode) {
@@ -224,37 +231,55 @@ export const createBooking = async (req: Request, res: Response) => {
           message: "Dữ liệu thanh toán không trùng khớp" 
         });
       }
-  
-      // B4: Chuẩn bị dữ liệu Booking mới
-      const newBooking: BookingType = {
-        ...req.body,              // Thông tin người đặt, ngày check-in/out từ form
-        userId: req.userId,       // ID người đặt
-        hotelId: hotelId, 
-        createdAt: new Date(),
-        status: "confirmed",      // Mặc định xác nhận luôn vì đã thanh toán xong
-        paymentStatus: "paid",
-        orderCode: orderCode,     // Lưu orderCode thay vì paymentIntentId
-      };
-  
-      // B5: Lưu Booking vào DB
-      const booking = new Booking(newBooking);
-      await booking.save();
-  
-      // B6: Cập nhật thống kê cho Khách sạn ($inc: tăng giá trị hiện có)
-      await Hotel.findByIdAndUpdate(hotelId, {
-        $inc: {
-          totalBookings: 1,           // Tăng tổng số đơn đặt
-          totalRevenue: newBooking.totalCost, // Cộng dồn doanh thu
-        },
-      });
-  
-      // B7: Cập nhật thống kê cho Người dùng
-      await User.findByIdAndUpdate(req.userId, {
-        $inc: {
-          totalBookings: 1,           // Tăng số lần đặt phòng của user
-          totalSpent: newBooking.totalCost, // Cộng dồn số tiền đã chi
-        },
-      });
+
+      // B4: Xử lý promotion code
+      let finalTotalCost = req.body.totalCost;
+      if (promotionCode && discountAmount) { 
+        // áp dụng discount vào totalCost
+        finalTotalCost = req.body.totalCost - (discountAmount || 0);
+
+
+        // Tăng số lần sử dụng promotion
+        const Promotion = require("../../models/promotion").default;
+        const promotion = await Promotion.findOne({ name: promotionCode }).exec();
+        if (promotion) {
+          promotion.currentUsage += 1;
+          await promotion.save();
+        }
+      }
+     // B5: Chuẩn bị dữ liệu Booking mới
+     const newBooking: BookingType = {
+      ...req.body,              // Thông tin người đặt, ngày check-in/out từ form
+      userId: req.userId,       // ID người đặt
+      hotelId: hotelId, 
+      createdAt: new Date(),
+      status: "confirmed",      // Mặc định xác nhận luôn vì đã thanh toán xong
+      paymentStatus: "paid",
+      orderCode: orderCode,     // Lưu orderCode
+      promotionCode: promotionCode || undefined, // ✅ Lưu promotion code
+      discountAmount: discountAmount || 0, // ✅ Lưu discount amount
+      totalCost: finalTotalCost, // ✅ Lưu total cost sau khi giảm giá
+    };
+
+    // B6: Lưu Booking vào DB
+    const booking = new Booking(newBooking);
+    await booking.save();
+
+    // B7: Cập nhật thống kê cho Khách sạn
+    await Hotel.findByIdAndUpdate(hotelId, {
+      $inc: {
+        totalBookings: 1,
+        totalRevenue: finalTotalCost, // ✅ Dùng finalTotalCost thay vì totalCost
+      },
+    });
+
+    // B8: Cập nhật thống kê cho Người dùng
+    await User.findByIdAndUpdate(req.userId, {
+      $inc: {
+        totalBookings: 1,
+        totalSpent: finalTotalCost, // ✅ Dùng finalTotalCost
+      },
+    });
   
       // Trả về thành công
       res.status(200).json({ 

@@ -51,7 +51,7 @@ const PaymentSuccess = () => {
                 checkOut: data.checkOut,
                 totalCost: data.totalCost,
                 specialRequests: data.specialRequests,
-            } as any); // Type assertion vì BookingFormData type chưa có orderCode
+            } as any); // Type assertion - BookingFormDataForPayOS đã có orderCode
         },
         onSuccess: () => {
             showToast({
@@ -115,8 +115,10 @@ const PaymentSuccess = () => {
                 checkIn: pendingBookingData.checkIn,
                 checkOut: pendingBookingData.checkOut,
                 totalCost: pendingBookingData.totalCost,
+                promotionCode: pendingBookingData.promotionCode, // ✅ THÊM
+                discountAmount: pendingBookingData.discountAmount, // ✅ THÊM
                 specialRequests: pendingBookingData.specialRequests,
-            } as any); // Type assertion vì BookingFormData type chưa có orderCode
+            } as any); // Type assertion - BookingFormDataForPayOS đã có orderCode
 
             // Xóa pending booking data sau khi đã lấy
             sessionStorage.removeItem("pendingBookingData");

@@ -61,6 +61,7 @@ export const AppContextProvider = ({
 
   // Always run validation query - let it handle token checking internally
   // QUAN TRỌNG: Thêm các options để tránh mất session khi HMR (Hot Module Replacement)
+  // ✅ FIX: Chỉ validate token khi có token trong localStorage (tránh lỗi 401 không cần thiết)
   const { isError, isLoading, data } = useQuery({
     queryKey: ["validateToken"],
     queryFn: apiClient.validateToken,
@@ -70,7 +71,7 @@ export const AppContextProvider = ({
     refetchOnReconnect: false, // Không refetch khi reconnect
     staleTime: 24 * 60 * 60 * 1000, // 24 giờ (JWT token có expiresIn: "1d")
     gcTime: 24 * 60 * 60 * 1000, // Giữ cache 24 giờ (React Query v5 dùng gcTime thay vì cacheTime)
-    enabled: true,
+    enabled: initialAuthState.hasToken, // ✅ CHỈ chạy khi có token (tránh gọi API khi không có token)
     // QUAN TRỌNG: Nếu có token trong localStorage, set initialData để tránh loading state
     // Khi HMR xảy ra, query có thể chưa có data ngay → dùng initialData từ localStorage
     // React Query v5: initialData phải là giá trị, không phải function

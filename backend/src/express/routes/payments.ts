@@ -66,11 +66,18 @@ router.post("/webhook", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid webhook data" });
     }
 
-    // verifiedData đã được verify và trả về từ payOS.webhooks.verify()
-    const { data } = verifiedData;
+    // verifiedData có thể là Promise hoặc object tuỳ theo hàm verifyWebhook
+    // Đảm bảo await nếu verifyWebhook trả về Promise
+    const { data } = await verifiedData as any;
+    // Hoặc nếu verifyWebhook chắc chắn trả ra object (không phải Promise) thì bỏ await
+    // const { data } = verifiedData;
+
+    // Destructure thông tin từ data mà PayOS trả về (orderCode, status)
     const { orderCode, status } = data;
 
+    // Log nhận webhook cho dev kiểm tra
     console.log(`📢 Webhook nhận được: orderCode=${orderCode}, status=${status}`);
+
 
     // B2: Cập nhật trạng thái booking
     if (status === "PAID") {

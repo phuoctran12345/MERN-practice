@@ -30,6 +30,7 @@ import CheckInPage from "./pages/dashboard/receptionist/CheckInPage";
 import CheckOutPage from "./pages/dashboard/receptionist/CheckOutPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import PaymentPage from "./pages/PaymentPage";
 
 const App = () => {
   // Lấy giá trị isLoggedIn từ Context để kiểm tra người dùng đã đăng nhập hay chưa
@@ -106,6 +107,14 @@ const App = () => {
 
         {/* --- PAYMENT ROUTES (Public - PayOS redirect) --- */}
         <Route
+          path="/payment"
+          element={
+            <Layout>
+              <PaymentPage />
+            </Layout>
+          }
+        />
+        <Route
           path="/booking/success"
           element={
             <Layout>
@@ -129,7 +138,9 @@ const App = () => {
               path="/hotel/:hotelId/booking"
               element={
                 <Layout>
-                  <Booking />
+                  <ProtectedRoute>
+                    <Booking />
+                  </ProtectedRoute>
                 </Layout>
               }
             />

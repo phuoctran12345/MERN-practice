@@ -20,11 +20,14 @@ export interface IBooking extends Document {
   paymentMethod?: string;
   paymentIntentId?: string; // ⚠️ DEPRECATED: Stripe Payment Intent ID (giữ lại để tương thích)
   orderCode?: number; // ✅ THÊM: PayOS Order Code
+  promotionCode?: string; // ✅ THÊM: Mã khuyến mãi đã áp dụng
+  discountAmount?: number; // ✅ THÊM: Số tiền được giảm
   specialRequests?: string;
   cancellationReason?: string;
   refundAmount: number;
   checkedInAt?: Date; // ✅ THÊM: Thời gian thực tế check-in
   checkedOutAt?: Date; // ✅ THÊM: Thời gian thực tế check-out
+  notes?: string; // ✅ THÊM: Ghi chú khi check-out
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,11 +62,14 @@ const bookingSchema = new mongoose.Schema(
     paymentMethod: { type: String },
     paymentIntentId: { type: String }, // ⚠️ DEPRECATED: Stripe (giữ lại để tương thích)
     orderCode: { type: Number, index: true }, // ✅ THÊM: PayOS Order Code
+    promotionCode: { type: String }, // ✅ THÊM: Mã khuyến mãi đã áp dụng
+    discountAmount: { type: Number }, // ✅ THÊM: Số tiền được giảm
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },
     checkedInAt: { type: Date }, // ✅ THÊM: Thời gian check-in thực tế
     checkedOutAt: { type: Date }, // ✅ THÊM: Thời gian check-out thực tế
+    notes: { type: String }, // ✅ THÊM: Ghi chú khi check-out
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

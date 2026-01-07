@@ -3,11 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../../../api-client";
 import { BookingType } from "../../../../../shared/types";
 import { formatVND } from "../../../utils/formatCurrency";
-import { CheckCircle, Search, AlertCircle, CreditCard, Banknote } from "lucide-react";
+import { CheckCircle, Search, CreditCard, Banknote, Clock } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import useAppContext from "../../../hooks/useAppContext";
+import EmptyState from "../../../components/EmptyState";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../../../components/ui/dialog";
 
 /**
  * CheckOutPage Component
@@ -21,6 +30,8 @@ const CheckOutPage = () => {
     const [extraCharges, setExtraCharges] = useState("");
     const [notes, setNotes] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "">(""); // Payment method cho phần thanh toán bổ sung
+    const [showEarlyCheckOutDialog, setShowEarlyCheckOutDialog] = useState(false);
+    const [earlyCheckOutDays, setEarlyCheckOutDays] = useState(0);
 
     // Fetch bookings để tìm kiếm
     const { data: bookingsData } = useQuery({
@@ -68,6 +79,9 @@ const CheckOutPage = () => {
         },
     });
 
+    /**
+     * Tìm booking theo booking code (orderCode hoặc _id) hoặc room number (roomId)
+     */
     const handleSearch = () => {
         if (!searchInput.trim()) {
             showToast({
@@ -78,36 +92,84 @@ const CheckOutPage = () => {
             return;
         }
 
-        const booking = bookingsData?.bookings?.find(
-            (b) =>
-                b._id.toLowerCase() === searchInput.toLowerCase() ||
-                b._id.toLowerCase().includes(searchInput.toLowerCase())
-        );
+        const searchTerm = searchInput.trim().toLowerCase();
+
+        // Tìm booking theo:
+        // 1. Booking ID (_id)
+        // 2. Order Code (nếu có)
+        // 3. Room ID (nếu có)
+        const booking = bookingsData?.bookings?.find((b) => {
+            // Tìm theo _id
+            if (b._id.toLowerCase() === searchTerm || b._id.toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+
+            // Tìm theo orderCode (nếu có trong booking)
+            const bookingWithOrderCode = b as any;
+            if (bookingWithOrderCode.orderCode &&
+                String(bookingWithOrderCode.orderCode).includes(searchTerm)) {
+                return true;
+            }
+
+            // Tìm theo roomId (nếu có trong booking)
+            if (bookingWithOrderCode.roomId &&
+                String(bookingWithOrderCode.roomId).toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+
+            return false;
+        });
 
         if (booking) {
-            // Kiểm tra booking có thể check-out không
-            // Note: TypeScript type không có "checked_in" nhưng backend có thể trả về
+            // ✅ Validation 1: Kiểm tra booking đã check-out chưa
             const bookingStatus = booking.status as string;
-            if (bookingStatus && bookingStatus !== "checked_in") {
+            if (bookingStatus === "completed" || bookingStatus === "checked_out") {
                 showToast({
-                    title: "Không thể check-out",
-                    description: `Booking phải ở trạng thái "checked_in". Trạng thái hiện tại: ${bookingStatus}`,
+                    title: "Booking đã được check-out",
+                    description: "Booking này đã được check-out rồi. Không thể check-out lại.",
                     type: "ERROR",
                 });
+                setFoundBooking(null);
                 return;
             }
 
+            // ✅ Validation 2: Kiểm tra booking chưa check-in
+            if (bookingStatus !== "checked_in") {
+                showToast({
+                    title: "Không thể check-out",
+                    description: `Booking phải ở trạng thái "checked_in". Trạng thái hiện tại: ${bookingStatus}. Vui lòng check-in trước!`,
+                    type: "ERROR",
+                });
+                setFoundBooking(null);
+                return;
+            }
+
+            // ✅ Validation 3: Kiểm tra early check-out (check-out trước ngày)
+            const checkOutDate = new Date(booking.checkOut);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            checkOutDate.setHours(0, 0, 0, 0);
+
+            const daysDiff = Math.floor((today.getTime() - checkOutDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysDiff < 0) {
+                // Check-out sớm (trước ngày check-out)
+                setEarlyCheckOutDays(Math.abs(daysDiff));
+                setShowEarlyCheckOutDialog(true);
+                setFoundBooking(booking);
+                return;
+            }
+
+            // Check-out đúng ngày hoặc sau ngày check-out → OK
             setFoundBooking(booking);
         } else {
-            showToast({
-                title: "Không tìm thấy booking",
-                description: "Vui lòng kiểm tra lại booking code",
-                type: "ERROR",
-            });
             setFoundBooking(null);
         }
     };
 
+    /**
+     * Xử lý check-out (có thể được gọi từ dialog early check-out hoặc button thường)
+     */
     const handleCheckOut = () => {
         if (!foundBooking) return;
 
@@ -140,6 +202,9 @@ const CheckOutPage = () => {
             notes: notes || undefined,
             paymentMethod: amountToPay > 0 ? paymentMethod as "cash" | "card" : undefined,
         });
+
+        // Đóng dialog nếu đang mở
+        setShowEarlyCheckOutDialog(false);
     };
 
     // Calculate costs
@@ -373,8 +438,8 @@ const CheckOutPage = () => {
                                     type="button"
                                     onClick={() => setPaymentMethod("cash")}
                                     className={`flex-1 p-4 border-4 border-black font-black uppercase transition-all ${paymentMethod === "cash"
-                                            ? "bg-green-100 text-black"
-                                            : "bg-white text-gray-600 hover:bg-gray-100"
+                                        ? "bg-green-100 text-black"
+                                        : "bg-white text-gray-600 hover:bg-gray-100"
                                         }`}
                                     style={{ boxShadow: "4px 4px 0px 0px #000" }}
                                 >
@@ -385,8 +450,8 @@ const CheckOutPage = () => {
                                     type="button"
                                     onClick={() => setPaymentMethod("card")}
                                     className={`flex-1 p-4 border-4 border-black font-black uppercase transition-all ${paymentMethod === "card"
-                                            ? "bg-green-100 text-black"
-                                            : "bg-white text-gray-600 hover:bg-gray-100"
+                                        ? "bg-green-100 text-black"
+                                        : "bg-white text-gray-600 hover:bg-gray-100"
                                         }`}
                                     style={{ boxShadow: "4px 4px 0px 0px #000" }}
                                 >
@@ -432,15 +497,50 @@ const CheckOutPage = () => {
                 </div>
             )}
 
-            {/* No Booking Found */}
+            {/* No Booking Found - Sử dụng EmptyState */}
             {!foundBooking && searchInput && (
-                <div className="bg-yellow-100 border-4 border-black p-6 text-center" style={{ boxShadow: "8px 8px 0px 0px #000" }}>
-                    <AlertCircle className="w-12 h-12 text-yellow-800 mx-auto mb-4" />
-                    <p className="text-lg font-bold text-yellow-800">
-                        Không tìm thấy booking. Vui lòng kiểm tra lại booking code.
-                    </p>
-                </div>
+                <EmptyState
+                    icon={Search}
+                    title="Không tìm thấy booking"
+                    description="Không tìm thấy booking với mã này. Vui lòng kiểm tra lại booking code hoặc thử tìm bằng room number."
+                    size="md"
+                />
             )}
+
+            {/* ✅ Early Check-out Confirmation Dialog */}
+            <Dialog open={showEarlyCheckOutDialog} onOpenChange={setShowEarlyCheckOutDialog}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-orange-600">
+                            <Clock className="h-5 w-5" />
+                            Cảnh báo: Check-out sớm
+                        </DialogTitle>
+                        <DialogDescription>
+                            Khách check-out sớm {earlyCheckOutDays} ngày so với ngày đặt phòng.
+                            Bạn có muốn tiếp tục check-out không?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowEarlyCheckOutDialog(false);
+                                setFoundBooking(null);
+                            }}
+                            className="px-4 py-2"
+                        >
+                            Hủy
+                        </Button>
+                        <Button
+                            onClick={handleCheckOut}
+                            disabled={checkOutMutation.isPending}
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700"
+                        >
+                            {checkOutMutation.isPending ? "Đang xử lý..." : "Tiếp tục check-out"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -4,6 +4,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import useSearchContext from "../../hooks/useSearchContext";
 import useAppContext from "../../hooks/useAppContext";
 import { useLocation, useNavigate } from "react-router-dom";
+import { formatVND } from "../../utils/formatCurrency";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -150,7 +151,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
               <span>Booking Summary</span>
             </div>
             <Badge variant="outline" className="text-sm">
-              £{pricePerNight}/night
+              {formatVND(pricePerNight)}/đêm
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -160,15 +161,14 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
           <div className="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-gray-600">
-                £{pricePerNight} × {numberOfNights} night
-                {numberOfNights > 1 ? "s" : ""}
+                {formatVND(pricePerNight)} × {numberOfNights} đêm
               </span>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-blue-600">
-                £{totalPrice}
+                {formatVND(totalPrice)}
               </div>
-              <div className="text-xs text-gray-500">Total Price</div>
+              <div className="text-xs text-gray-500">Tổng giá</div>
             </div>
           </div>
 

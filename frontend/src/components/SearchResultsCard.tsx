@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { HotelType } from "../../../shared/types";
 import { AiFillStar } from "react-icons/ai";
+import { formatVND } from "../utils/formatCurrency";
 import {
   MapPin,
   Building2,
@@ -50,7 +51,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
           {/* Overlay Badges */}
           <div className="absolute top-4 left-4 flex flex-col space-y-2">
             <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-              <span className="text-sm font-bold">£{hotel.pricePerNight}</span>
+              <span className="text-sm font-bold">{formatVND(hotel.pricePerNight)}</span>
             </div>
             {hotel.isFeatured && (
               <div className="bg-yellow-500 text-white rounded-full px-3 py-1">

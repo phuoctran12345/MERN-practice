@@ -4,13 +4,11 @@ import { SignInFormData } from "./pages/SignIn";
 import {
   HotelSearchResponse,
   HotelType,
-  PaymentIntentResponse,
   PayOSPaymentLinkResponse,
   UserType,
   HotelWithBookingsType,
   BookingType,
 } from "../../shared/types";
-import { BookingFormData } from "./forms/BookingForm/BookingForm";
 import { BookingFormDataForPayOS } from "./forms/BookingForm/BookingFormPayOS";
 import { queryClient } from "./main";
 
@@ -255,18 +253,6 @@ export const fetchHotelById = async (hotelId: string): Promise<HotelType> => {
   return response.data;
 };
 
-// ⚠️ DEPRECATED: Stripe Payment Intent (giữ lại để tương thích tạm thời)
-export const createPaymentIntent = async (
-  hotelId: string,
-  numberOfNights: string
-): Promise<PaymentIntentResponse> => {
-  const response = await axiosInstance.post(
-    `/api/hotels/${hotelId}/bookings/payment-intent`,
-    { numberOfNights }
-  );
-  return response.data;
-};
-
 // ✅ PayOS: Tạo payment link
 export const createPayOSPaymentLink = async (
   hotelId: string,
@@ -279,8 +265,8 @@ export const createPayOSPaymentLink = async (
   return response.data;
 };
 
-// ⚠️ DEPRECATED: Stripe booking (giữ lại để tương thích)
-export const createRoomBooking = async (formData: BookingFormData | BookingFormDataForPayOS) => {
+// ✅ Tạo booking sau khi thanh toán PayOS thành công
+export const createRoomBooking = async (formData: BookingFormDataForPayOS) => {
   const response = await axiosInstance.post(
     `/api/hotels/${formData.hotelId}/bookings`,
     formData
@@ -667,3 +653,45 @@ export const deletePromotion = async (promotionId: string) => {
   );
   return response.data;
 };
+
+
+// ============================================
+// Validate Promotion Code
+// nghiệp vụ handle giảm giá
+export interface ValidatePromotionCodeRequest {
+  code: string;
+  hotelId: string;
+  checkIn: string; // ISO date string
+  checkOut: string; // ISO date string
+  numberOfNights: number;
+  totalCost: number;
+}
+
+export interface ValidatePromotionCodeResponse {
+  message: string;
+  valid: boolean;
+  promotion?: {
+    _id: string;
+    name: string;
+    description: string;
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountValue: number;
+  };
+  discountAmount?: number;
+  finalPrice?: number;
+  originalPrice?: number;
+}
+
+export const validatePromotionCode = async (
+  data: ValidatePromotionCodeRequest
+): Promise<ValidatePromotionCodeResponse> => { //Promise có nghĩa là chờ  xí khi mô validate xong ta sẽ trả cho mi cái định dạng đúng
+
+  // Sử dụng thư viện axios để gửi một yêu cầu POST đến Server
+  // axiosInstance thường đã được cấu hình sẵn Base URL và Headers (Token)
+  const response = await axiosInstance.post(
+    "/api/v2/promotions/validate",
+    data      
+  );
+  return response.data;
+};
+

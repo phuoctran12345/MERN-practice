@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod"; // ✅ THÊM: Zod resolver cho React Hook Form
 import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
@@ -19,11 +20,8 @@ import {
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
-
-export type SignInFormData = {
-  email: string;
-  password: string;
-};
+// ✅ THÊM: Import Zod schema
+import { signInSchema, type SignInFormData } from "../schemas/auth.schemas";
 
 const SignIn = () => {
   const { showToast } = useAppContext();
@@ -35,11 +33,17 @@ const SignIn = () => {
 
   const location = useLocation();
 
+  // ✅ SỬ DỤNG ZOD SCHEMA VỚI REACT HOOK FORM
+  // zodResolver: Bridge giữa Zod schema và React Hook Form
+  // - Tự động validate theo schema
+  // - Tự động hiển thị error messages từ schema
   const {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm<SignInFormData>();
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema), // ✅ THÊM: Dùng Zod schema để validate
+  });
 
   const mutation = useMutationWithLoading(apiClient.signIn, {
     onSuccess: async () => {

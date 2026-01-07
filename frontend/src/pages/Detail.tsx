@@ -4,6 +4,7 @@ import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "../forms/GuestInfoForm/GuestInfoForm";
 import { Badge } from "../components/ui/badge";
+import { formatVND } from "../utils/formatCurrency";
 import { useState } from "react";
 import {
   MapPin,
@@ -210,7 +211,7 @@ const Detail = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div>
                   <div className="text-2xl font-bold text-gray-900">
-                    £{hotel.pricePerNight.toLocaleString()}
+                    {formatVND(hotel.pricePerNight)}
                   </div>
                   <div className="text-sm text-gray-600">per night</div>
                 </div>

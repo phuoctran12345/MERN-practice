@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { HotelType } from "../../../shared/types";
 import { MapPin, Star, Users } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { formatVND } from "../utils/formatCurrency";
 
 type Props = {
   hotel: HotelType;
@@ -37,7 +38,7 @@ const LatestDestinationCard = ({ hotel }: Props) => {
         {/* Price Badge */}
         <div className="absolute top-4 left-4">
           <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-            <span className="text-sm font-bold">£{hotel.pricePerNight}</span>
+            <span className="text-sm font-bold">{formatVND(hotel.pricePerNight)}</span>
           </div>
         </div>
       </div>

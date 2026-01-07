@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod"; // ✅ THÊM: Zod resolver
 import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
@@ -27,14 +28,8 @@ import {
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
-
-export type RegisterFormData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+// ✅ THÊM: Import Zod schema
+import { registerSchema, type RegisterFormData } from "../schemas/auth.schemas";
 
 const Register = () => {
   const queryClient = useQueryClient();
@@ -44,12 +39,15 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ SỬ DỤNG ZOD SCHEMA VỚI REACT HOOK FORM
   const {
     register,
     watch,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormData>();
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema), // ✅ THÊM: Dùng Zod schema để validate
+  });
 
   const mutation = useMutationWithLoading(apiClient.register, {
     onSuccess: async () => {

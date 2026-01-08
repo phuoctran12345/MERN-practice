@@ -155,6 +155,11 @@ app.use(
         return callback(null, true);
       }
 
+      // Cho phép đường dẫn có đuôi là vercel.app      
+      if (origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }

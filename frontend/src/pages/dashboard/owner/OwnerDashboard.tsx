@@ -48,14 +48,7 @@ const OwnerDashboard = () => {
         queryFn: () => apiClient.getAllEmployees(),
     });
 
-    // Fetch all users count (for overview)
-    const { data: usersData } = useQuery({
-        queryKey: ["getAllUsers"],
-        queryFn: () => apiClient.getAllUsers({ limit: 1 }), // Chỉ cần count, không cần data
-    });
-
     const employeesCount = employeesData?.employees?.length || employeesData?.length || 0;
-    const totalUsersCount = usersData?.pagination?.total || usersData?.users?.length || 0;
 
     if (isLoading) {
         return (

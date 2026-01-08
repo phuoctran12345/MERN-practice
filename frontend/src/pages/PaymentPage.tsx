@@ -23,7 +23,6 @@ const PaymentPage = () => {
     const { showToast } = useAppContext();
 
     const checkoutUrl = searchParams.get("checkoutUrl");
-    const orderCode = searchParams.get("orderCode");
     const hotelId = searchParams.get("hotelId");
 
     // ✅ Countdown timer state (5 phút = 300 giây)

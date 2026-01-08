@@ -29,7 +29,6 @@ const MyHotels = () => {
     "fetchMyHotels",
     apiClient.fetchMyHotels,
     {
-      onError: () => {},
       loadingMessage: "Loading your hotels...",
     }
   );

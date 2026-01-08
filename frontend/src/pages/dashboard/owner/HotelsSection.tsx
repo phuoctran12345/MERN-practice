@@ -2,10 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import * as apiClient from "../../../api-client";
 import { formatVND } from "../../../utils/formatCurrency";
-import { Hotel, Plus, Edit, Trash2 } from "lucide-react";
+import { Hotel, Plus, Edit } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
-import { AiFillStar } from "react-icons/ai";
 
 /**
  * HotelsSection Component

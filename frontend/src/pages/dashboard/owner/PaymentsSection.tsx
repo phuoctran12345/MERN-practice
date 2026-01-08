@@ -42,7 +42,7 @@ const PaymentsSection = () => {
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
     // Query để lấy danh sách payments
-    const { data: paymentsData, isLoading, refetch } = useQuery({
+    const { data: paymentsData, isLoading } = useQuery({
         queryKey: ["getAllPayments", currentPage, pageSize, paymentStatusFilter],
         queryFn: () =>
             apiClient.getAllPayments({
@@ -100,18 +100,18 @@ const PaymentsSection = () => {
     };
 
     const getStatusBadge = (status: string) => {
-        const statusMap: Record<string, { label: string; variant: "default" | "success" | "danger" | "warning" }> = {
-            paid: { label: "Đã thanh toán", variant: "success" },
-            pending: { label: "Chờ thanh toán", variant: "warning" },
-            failed: { label: "Thất bại", variant: "danger" },
-            refunded: { label: "Đã hoàn tiền", variant: "default" },
+        const statusMap: Record<string, { label: string; className: string }> = {
+            paid: { label: "Đã thanh toán", className: "bg-green-100 text-green-800" },
+            pending: { label: "Chờ thanh toán", className: "bg-yellow-100 text-yellow-800" },
+            failed: { label: "Thất bại", className: "bg-red-100 text-red-800" },
+            refunded: { label: "Đã hoàn tiền", className: "bg-gray-100 text-gray-800" },
         };
 
-        const statusInfo = statusMap[status] || { label: status, variant: "default" };
+        const statusInfo = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-800" };
         return (
             <Badge
-                variant={statusInfo.variant}
-                className="font-semibold"
+                variant="outline"
+                className={`font-semibold ${statusInfo.className}`}
             >
                 {statusInfo.label}
             </Badge>

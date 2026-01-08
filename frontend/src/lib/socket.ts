@@ -28,9 +28,9 @@ export const initSocket = (): Socket => {
     // Socket disconnected - chỉ log errors
   });
 
-  socket.on("connect_error", (error) => {
+  socket.on("connect_error", (_error) => {
     // Đã tắt log để giảm noise trong console
-    // console.error("❌ Socket.IO connection error:", error);
+    // console.error("❌ Socket.IO connection error:", _error);
   });
 
   return socket;

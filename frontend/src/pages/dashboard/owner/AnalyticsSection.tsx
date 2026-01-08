@@ -1,13 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../../../api-client";
-import { formatVND, formatVNDNumber } from "../../../utils/formatCurrency";
-import {
-  BarChart3,
-  TrendingUp,
-  DollarSign,
-  Users,
-  Calendar,
-} from "lucide-react";
+import { formatVND } from "../../../utils/formatCurrency";
+import { BarChart3, TrendingUp, DollarSign, Users } from "lucide-react";
 import {
   LineChart,
   Line,

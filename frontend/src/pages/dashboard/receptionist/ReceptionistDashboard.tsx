@@ -39,7 +39,7 @@ const ReceptionistDashboard = () => {
         checkoutDate.setHours(0, 0, 0, 0);
         return (
             checkoutDate.getTime() === today.getTime() &&
-            booking.status === "checked_in"
+            String(booking.status) === "checked_in"
         );
     }).length || 0;
 

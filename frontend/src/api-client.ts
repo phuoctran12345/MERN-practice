@@ -1,6 +1,6 @@
 import axiosInstance from "./lib/api-client";
-import { RegisterFormData } from "./pages/Register";
-import { SignInFormData } from "./pages/SignIn";
+// ✅ Import kiểu dữ liệu form từ auth.schemas thay vì từ pages
+import { RegisterFormData, SignInFormData } from "./schemas/auth.schemas";
 import {
   HotelSearchResponse,
   HotelType,

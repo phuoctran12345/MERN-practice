@@ -19,7 +19,8 @@ const BookingsSection = () => {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [editingBooking, setEditingBooking] = useState<BookingType | null>(null);
+    // TODO: Khi triển khai màn hình chỉnh sửa booking, có thể bật lại state này
+    const [, setEditingBooking] = useState<BookingType | null>(null);
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -42,8 +43,8 @@ const BookingsSection = () => {
         }),
     });
 
-    // Update booking mutation
-    const updateMutation = useMutation({
+    // Update booking mutation (hiện tại chỉ khởi tạo để dùng sau này)
+    useMutation({
         mutationFn: ({ bookingId, data }: { bookingId: string; data: Partial<BookingType> }) =>
             apiClient.updateBooking(bookingId, data),
         onSuccess: () => {

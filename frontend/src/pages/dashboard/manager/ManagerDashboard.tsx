@@ -15,7 +15,7 @@ import {
  */
 const ManagerDashboard = () => {
     // Fetch dashboard data
-    const { data: dashboardData, isLoading } = useQuery({
+    const { isLoading } = useQuery({
         queryKey: ["businessInsightsDashboard"],
         queryFn: apiClient.fetchBusinessInsightsDashboard,
     });

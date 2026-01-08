@@ -33,20 +33,28 @@ const ServiceRequestsSection = () => {
             apiClient.updateServiceRequest(serviceRequestId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["getAllServiceRequests"] });
-            showToast("Cập nhật service request thành công!", "success");
+            showToast({
+                title: "Cập nhật service request thành công!",
+                description: "Trạng thái service request đã được cập nhật.",
+                type: "SUCCESS",
+            });
         },
         onError: (error: any) => {
-            showToast(error?.response?.data?.message || "Có lỗi xảy ra", "error");
+            showToast({
+                title: "Có lỗi xảy ra",
+                description: error?.response?.data?.message || "Không thể cập nhật service request.",
+                type: "ERROR",
+            });
         },
     });
 
     // Backend có thể trả về array hoặc object với serviceRequests field
-    const serviceRequests = Array.isArray(serviceRequestsData) 
-        ? serviceRequestsData 
+    const serviceRequests = Array.isArray(serviceRequestsData)
+        ? serviceRequestsData
         : serviceRequestsData?.serviceRequests || [];
 
     // Filter service requests by search term
-    const filteredRequests = serviceRequests.filter((request) => {
+    const filteredRequests = serviceRequests.filter((request: ServiceRequestType) => {
         const searchLower = searchTerm.toLowerCase();
         return (
             request.description.toLowerCase().includes(searchLower) ||
@@ -153,7 +161,7 @@ const ServiceRequestsSection = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredRequests.map((request) => (
+                                {filteredRequests.map((request: ServiceRequestType) => (
                                     <tr key={request._id} className="border-b-2 border-black hover:bg-yellow-50">
                                         <td className="px-6 py-4 font-bold">
                                             {getServiceTypeLabel(request.serviceType)}

@@ -13,6 +13,13 @@
 secrets/
 credentials/
 
+# Rule lock
+.cursor
+rule ver1.md
+rule.md
+
+
+
 # Dependencies
 node_modules/
 npm-debug.log*

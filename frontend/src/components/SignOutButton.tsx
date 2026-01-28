@@ -26,8 +26,9 @@ const SignOutButton = () => {
           "You have been logged out of your account. Redirecting to sign-in page...",
         type: "SUCCESS",
       });
-      navigate("/sign-in");
-      window.location.reload();
+      // Dùng window.location.href để đảm bảo chuyển trang và reload cùng lúc
+      // Tránh lỗi 404 khi navigate + reload riêng biệt
+      window.location.href = "/sign-in";
     },
     onError: (error: Error) => {
       showToast({
@@ -48,8 +49,8 @@ const SignOutButton = () => {
           "Authentication state has been cleared. Redirecting to sign-in page...",
         type: "SUCCESS",
       });
-      navigate("/sign-in");
-      window.location.reload();
+      // Dùng window.location.href để đảm bảo chuyển trang và reload cùng lúc
+      window.location.href = "/sign-in";
     },
     onError: (error: Error) => {
       showToast({

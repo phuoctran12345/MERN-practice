@@ -3,20 +3,24 @@ import Cookies from "js-cookie";
 
 /**
  * Xác định Base URL của API dựa trên môi trường
+ * Normalize URL để tránh double slash khi nối với endpoint
  */
 const getBaseURL = () => {
+  let baseURL: string;
+  
   // Ưu tiên: Lấy từ biến môi trường (.env)
   if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+    baseURL = import.meta.env.VITE_API_BASE_URL;
+  } else if (window.location.hostname === "localhost") {
+    // Nếu chạy localhost → dùng backend local
+    baseURL = "http://localhost:7002";
+  } else {
+    // Mặc định: localhost
+    baseURL = "http://localhost:7002";
   }
 
-  // Nếu chạy localhost → dùng backend local
-  if (window.location.hostname === "localhost") {
-    return "http://localhost:7002";
-  }
-
-  // Mặc định: localhost
-  return "http://localhost:7002";
+  // Loại bỏ dấu slash ở cuối để tránh double slash khi nối với endpoint
+  return baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
 };
 
 /**

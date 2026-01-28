@@ -77,8 +77,9 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           }
         }
 
-        const apiBaseUrl =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+        // Normalize URL để tránh double slash
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+        const apiBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
         const response = await fetch(`${apiBaseUrl}/api/hotels`);
 
         if (!response.ok) {

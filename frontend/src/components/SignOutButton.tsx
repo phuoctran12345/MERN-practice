@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
-import { useNavigate } from "react-router-dom";
+// Removed useNavigate import vì đã dùng window.location.href thay thế
 import { LogOut, Trash2, RefreshCw, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import {
 const SignOutButton = () => {
   const queryClient = useQueryClient();
   const { showToast } = useAppContext();
-  const navigate = useNavigate();
+  // Removed navigate vì đã dùng window.location.href thay thế
 
   const mutation = useMutationWithLoading(apiClient.signOut, {
     onSuccess: async () => {

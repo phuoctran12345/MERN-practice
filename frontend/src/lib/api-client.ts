@@ -10,7 +10,7 @@ const getBaseURL = () => {
   
   // Ưu tiên: Lấy từ biến môi trường (.env)
   if (import.meta.env.VITE_API_BASE_URL) {
-    baseURL = import.meta.env.VITE_API_BASE_URL;
+    baseURL = String(import.meta.env.VITE_API_BASE_URL).trim();
   } else if (window.location.hostname === "localhost") {
     // Nếu chạy localhost → dùng backend local
     baseURL = "http://localhost:7002";
@@ -20,7 +20,8 @@ const getBaseURL = () => {
   }
 
   // Loại bỏ dấu slash ở cuối để tránh double slash khi nối với endpoint
-  return baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+  // Axios sẽ tự động thêm slash giữa baseURL và path nếu cần
+  return baseURL.replace(/\/+$/, ""); // Loại bỏ tất cả slash ở cuối
 };
 
 /**

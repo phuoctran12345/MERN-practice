@@ -54,8 +54,8 @@ const SearchBar = () => {
 
         // lấy ra api của BE  và fetch dữ liệu ra
         // Normalize URL để tránh double slash
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
-        const apiBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+        const baseUrl = String(import.meta.env.VITE_API_BASE_URL || "http://localhost:7002").trim();
+        const apiBaseUrl = baseUrl.replace(/\/+$/, ""); // Loại bỏ tất cả slash ở cuối
         const response = await fetch(`${apiBaseUrl}/api/hotels`);
 
         if (!response.ok) {

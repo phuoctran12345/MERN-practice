@@ -5,13 +5,18 @@ import { useUserStore } from "../stores/userStore";
 import SignOutButton from "./SignOutButton";
 import { NeoButton } from "./ui/neo-button";
 import {
-  FileText,
-  Activity,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
   BarChart3,
   Building2,
   Calendar,
   LogIn,
   Menu,
+  type LucideIcon,
 } from "lucide-react";
 
 const Header = () => {
@@ -21,6 +26,46 @@ const Header = () => {
   const navigate = useNavigate();
 
   const userRole = getUserRole();
+  const isStaff =
+    userRole === "hotel_owner" ||
+    userRole === "manager" ||
+    userRole === "receptionist" ||
+    userRole === "admin";
+
+  // Map route theo role để reuse, tránh hardcode lặp nhiều lần
+  const dashboardBasePath =
+    userRole === "hotel_owner"
+      ? "/dashboard/owner"
+      : userRole === "manager"
+        ? "/dashboard/manager"
+        : userRole === "receptionist"
+          ? "/dashboard/receptionist"
+          : "/dashboard";
+
+  // Menu dashboard cho staff (manager/owner/receptionist)
+  const dashboardMenuItems: Array<{
+    label: string;
+    to: string;
+    icon: LucideIcon;
+  }> = [
+    // ✅ Tổng quan / dashboard home
+    { label: "Dashboard", to: `${dashboardBasePath}`, icon: BarChart3 },
+
+    // ✅ Các mục quản trị theo UC (manager/owner có nhiều hơn)
+    ...(userRole === "hotel_owner" || userRole === "manager"
+      ? ([
+          { label: "Khách Sạn", to: `${dashboardBasePath}/hotels`, icon: Building2 },
+          { label: "Đặt Phòng", to: `${dashboardBasePath}/bookings`, icon: Calendar },
+          { label: "Thống Kê", to: `${dashboardBasePath}/analytics`, icon: BarChart3 },
+          { label: "Nhân Viên", to: `${dashboardBasePath}/employees`, icon: Menu },
+          { label: "Khuyến Mãi", to: `${dashboardBasePath}/promotions`, icon: Menu },
+        ] as const)
+      : userRole === "receptionist"
+        ? ([
+            { label: "Đặt Phòng", to: `${dashboardBasePath}`, icon: Calendar },
+          ] as const)
+        : ([] as const)),
+  ];
 
   const handleLogoClick = () => {
     // Clear search context when going to home page
@@ -64,67 +109,54 @@ const Header = () => {
             <nav className="hidden md:flex items-center gap-2">
               {isLoggedIn ? (
                 <>
-                  {/* Analytics Dashboard Link - Chỉ hiển thị cho owner và manager */}
-                  {(userRole === "hotel_owner" || userRole === "manager") && (
+                  {/* ✅ Tối ưu header: gom menu theo role để đỡ "dài" */}
+                  {isStaff ? (
+                    <>
+                      {/* Dashboard menu (manager/owner/receptionist) */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
+                            style={{ boxShadow: "4px 4px 0px 0px #000" }}
+                          >
+                            <Menu className="w-4 h-4 mr-2" strokeWidth={3} />
+                            Dashboard
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-56 bg-white border-4 border-black"
+                          align="end"
+                          style={{ boxShadow: "6px 6px 0px 0px #000" }}
+                        >
+                          {dashboardMenuItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <DropdownMenuItem
+                                key={item.to}
+                                asChild
+                                className="text-black font-black uppercase focus:bg-yellow-100 focus:text-black"
+                              >
+                                <Link to={item.to} className="flex items-center">
+                                  <Icon className="w-4 h-4 mr-2" strokeWidth={3} />
+                                  {item.label}
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  ) : (
+                    // User thường: giữ link "Đặt phòng của tôi"
                     <Link
-                      to={
-                        userRole === "hotel_owner"
-                          ? "/dashboard/owner/analytics"
-                          : "/dashboard/manager/analytics"
-                      }
+                      to="/my-bookings"
                       className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
                       style={{ boxShadow: "4px 4px 0px 0px #000" }}
                     >
-                      <BarChart3 className="w-4 h-4 mr-2" strokeWidth={3} />
-                      Thống Kê
+                      <Calendar className="w-4 h-4 mr-2" strokeWidth={3} />
+                      Đặt Phòng
                     </Link>
                   )}
-
-                  {/* My Bookings Link */}
-                  <Link
-                    to="/my-bookings"
-                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
-                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" strokeWidth={3} />
-                    Đặt Phòng
-                  </Link>
-
-                  {/* My Hotels Link - Chỉ hiển thị cho owner và manager */}
-                  {(userRole === "hotel_owner" || userRole === "manager") && (
-                    <Link
-                      to={
-                        userRole === "hotel_owner"
-                          ? "/dashboard/owner/hotels"
-                          : "/dashboard/manager/hotels"
-                      }
-                      className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
-                      style={{ boxShadow: "4px 4px 0px 0px #000" }}
-                    >
-                      <Building2 className="w-4 h-4 mr-2" strokeWidth={3} />
-                      Khách Sạn
-                    </Link>
-                  )}
-
-                  {/* API Documentation Link */}
-                  <Link
-                    to="/api-docs"
-                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
-                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
-                  >
-                    <FileText className="w-4 h-4 mr-2" strokeWidth={3} />
-                    API Docs
-                  </Link>
-
-                  {/* API Status Link */}
-                  <Link
-                    to="/api-status"
-                    className="flex items-center px-4 py-2 bg-white border-4 border-black text-black font-black text-sm uppercase transition-all duration-150 hover:translate-x-1 hover:translate-y-1 active:translate-x-0 active:translate-y-0"
-                    style={{ boxShadow: "4px 4px 0px 0px #000" }}
-                  >
-                    <Activity className="w-4 h-4 mr-2" strokeWidth={3} />
-                    Status
-                  </Link>
 
                   <SignOutButton />
                 </>

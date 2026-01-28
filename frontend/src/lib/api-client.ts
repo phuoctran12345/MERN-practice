@@ -2,6 +2,14 @@ import axios, { InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
 /**
+ * Helper function: Normalize URL để tránh double slash
+ * Loại bỏ tất cả slash ở cuối URL
+ */
+export const normalizeUrl = (url: string): string => {
+  return String(url).trim().replace(/\/+$/, "");
+};
+
+/**
  * Xác định Base URL của API dựa trên môi trường
  * Normalize URL để tránh double slash khi nối với endpoint
  */
@@ -21,7 +29,7 @@ const getBaseURL = () => {
 
   // Loại bỏ dấu slash ở cuối để tránh double slash khi nối với endpoint
   // Axios sẽ tự động thêm slash giữa baseURL và path nếu cần
-  return baseURL.replace(/\/+$/, ""); // Loại bỏ tất cả slash ở cuối
+  return normalizeUrl(baseURL);
 };
 
 /**

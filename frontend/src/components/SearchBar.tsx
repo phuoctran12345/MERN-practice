@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent } from "./ui/card";
+import { normalizeUrl } from "../lib/api-client";
 
 const SearchBar = () => {
   const navigate = useNavigate();
@@ -54,8 +55,8 @@ const SearchBar = () => {
 
         // lấy ra api của BE  và fetch dữ liệu ra
         // Normalize URL để tránh double slash
-        const baseUrl = String(import.meta.env.VITE_API_BASE_URL || "http://localhost:7002").trim();
-        const apiBaseUrl = baseUrl.replace(/\/+$/, ""); // Loại bỏ tất cả slash ở cuối
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+        const apiBaseUrl = normalizeUrl(baseUrl);
         const response = await fetch(`${apiBaseUrl}/api/hotels`);
 
         if (!response.ok) {

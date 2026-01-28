@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import useSearchContext from "../hooks/useSearchContext";
+import { normalizeUrl } from "../lib/api-client";
 
 interface AdvancedSearchProps {
   onSearch: (searchData: any) => void;
@@ -78,8 +79,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         }
 
         // Normalize URL để tránh double slash
-        const baseUrl = String(import.meta.env.VITE_API_BASE_URL || "http://localhost:7002").trim();
-        const apiBaseUrl = baseUrl.replace(/\/+$/, ""); // Loại bỏ tất cả slash ở cuối
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+        const apiBaseUrl = normalizeUrl(baseUrl);
         const response = await fetch(`${apiBaseUrl}/api/hotels`);
 
         if (!response.ok) {

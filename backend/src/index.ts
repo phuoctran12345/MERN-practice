@@ -26,6 +26,7 @@ import path from "path";
 import { v2 as cloudinary } from "cloudinary";
 import swaggerUi from "swagger-ui-express";
 import { specs } from "./shared/swagger";
+import customOpenApi from "./shared/customOpenApi";
 import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
@@ -139,7 +140,7 @@ const allowedOrigins = [
 ].filter((origin): origin is string => Boolean(origin));
 app.use(
   cors({
-    origin: (origin, callback) => { 
+    origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
@@ -155,7 +156,7 @@ app.use(
         return callback(null, true);
       }
 
-      // Cho phép đường dẫn có đuôi là vercel.app      
+      // Cho phép đường dẫn có đuôi là vercel.app
       if (origin.includes("vercel.app")) {
         return callback(null, true);
       }
@@ -173,14 +174,14 @@ app.use(
     },
     credentials: true,
     optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],  // các phương thức HTTP được phép 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // các phương thức HTTP được phép
     allowedHeaders: [
       "Content-Type",
       "Authorization",
       "Cookie",
       "X-Requested-With",
     ],
-  })
+  }),
 );
 // Explicit preflight handler for all routes
 app.options(
@@ -191,7 +192,8 @@ app.options(
       if (!origin) return callback(null, true);
 
       // In development, allow all localhost origins
-      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) { //
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+        //
         if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
           return callback(null, true);
         }
@@ -210,14 +212,14 @@ app.options(
     },
     credentials: true,
     optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],// các phương thức HTTP được phép 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // các phương thức HTTP được phép
     allowedHeaders: [
       "Content-Type",
       "Authorization",
       "Cookie",
       "X-Requested-With",
     ],
-  })
+  }),
 );
 app.use(cookieParser());
 app.use(express.json());
@@ -259,7 +261,32 @@ app.use(
   swaggerUi.setup(specs, {
     customCss: ".swagger-ui .topbar { display: none }",
     customSiteTitle: "Hotel Booking API Documentation",
-  })
+  }),
+);
+
+// OpenAPI JSON endpoints for tools (e.g., Postman) that accept OpenAPI/Swagger JSON
+app.get("/v3/api-docs", (req: Request, res: Response) => {
+  res.json(specs);
+});
+
+app.get("/api-docs.json", (req: Request, res: Response) => {
+  res.json(specs);
+});
+
+// Custom OpenAPI JSON (user-provided) and Swagger UI
+app.get("/openapi/custom.json", (req: Request, res: Response) => {
+  res.json(customOpenApi);
+});
+
+app.use(
+  "/openapi",
+  swaggerUi.serve,
+  // Use `null as any` so TypeScript accepts using `swaggerUrl` option
+  swaggerUi.setup(null as any, {
+    swaggerUrl: "/openapi/custom.json",
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "Custom OpenAPI Documentation",
+  }),
 );
 
 // Dynamic Port Configuration (for Render and local development)
@@ -273,7 +300,7 @@ const httpServer = createServer(app);
 const allowedSocketOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5174",
-  "http://localhost:5173"
+  "http://localhost:5173",
 ].filter((origin): origin is string => Boolean(origin));
 
 const io = new SocketIOServer(httpServer, {
@@ -281,19 +308,19 @@ const io = new SocketIOServer(httpServer, {
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps)
       if (!origin) return callback(null, true);
-      
+
       // In development, allow all localhost origins
       if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
         if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
           return callback(null, true);
         }
       }
-      
+
       // Check if origin is in allowed list
       if (allowedSocketOrigins.includes(origin)) {
         return callback(null, true);
       }
-      
+
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,

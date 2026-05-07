@@ -1,36 +1,9 @@
-import express, { Request, Response } from "express";
-import cors from "cors";
 import "dotenv/config";
 import mongoose from "mongoose";
 import { Server as SocketIOServer } from "socket.io";
 import { createServer } from "http";
-// Express routes imports
-import userRoutes from "./express/routes/users";
-import authRoutes from "./express/routes/auth";
-import myHotelRoutes from "./express/routes/my-hotels";
-import hotelRoutes from "./express/routes/hotels";
-import bookingRoutes from "./express/routes/my-bookings";
-import bookingsManagementRoutes from "./express/routes/bookings";
-import healthRoutes from "./express/routes/health";
-import businessInsightsRoutes from "./express/routes/business-insights";
-import roomsRoutes from "./express/routes/rooms";
-import serviceRequestsRoutes from "./express/routes/service-requests";
-import bookingOperationsRoutes from "./express/routes/booking-operations";
-import paymentRoutes from "./express/routes/payments";
-import promotionsRoutes from "./express/routes/promotions";
-import employeesRoutes from "./express/routes/employees";
-
-// Shared imports
-import cookieParser from "cookie-parser";
-import path from "path";
 import { v2 as cloudinary } from "cloudinary";
-import swaggerUi from "swagger-ui-express";
-import { specs } from "./shared/swagger";
-import customOpenApi from "./shared/customOpenApi";
-import helmet from "helmet";
-import morgan from "morgan";
-import compression from "compression";
-import rateLimit from "express-rate-limit";
+import { createApp } from "./app";
 
 // Removed NestJS - Using Express only
 
@@ -49,7 +22,8 @@ const requiredEnvVars = [
 
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
-if (missingEnvVars.length > 0) {
+// Khi chạy test (CI), cho phép skip bắt buộc env để chạy unit/integration test cơ bản.
+if (missingEnvVars.length > 0 && process.env.NODE_ENV !== "test") {
   console.error("❌ Missing required environment variables:");
   missingEnvVars.forEach((envVar) => console.error(`   - ${envVar}`));
   process.exit(1);
@@ -59,13 +33,14 @@ console.log("✅ All required environment variables are present");
 console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
 console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || "Not set"}`);
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-console.log("☁️  Cloudinary configured successfully");
+if (process.env.NODE_ENV !== "test") {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  console.log("☁️  Cloudinary configured successfully");
+}
 
 // MongoDB Connection with Error Handling
 const connectDB = async () => {
@@ -94,200 +69,11 @@ mongoose.connection.on("reconnected", () => {
   console.log("✅ MongoDB reconnected successfully");
 });
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
-const app = express();
-
-// Security middleware
-app.use(helmet());
-
-// Trust proxy for production (fixes rate limiting issues)
-app.set("trust proxy", 1);
-
-// Rate limiting - more lenient for payment endpoints
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Increased limit for general requests
-  message: "Too many requests from this IP, please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Special limiter for payment endpoints
-const paymentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Higher limit for payment requests
-  message: "Too many payment requests, please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use("/api/", generalLimiter);
-app.use("/api/hotels/*/bookings/payment-intent", paymentLimiter);
-
-// Compression middleware
-app.use(compression());
-
-// Logging middleware
-app.use(morgan("combined"));
-
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:5174",
-  "http://localhost:5173",
-  "https://mern-booking-hotel.netlify.app",
-  "https://mern-booking-hotel.netlify.app/",
-].filter((origin): origin is string => Boolean(origin));
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      // In development, allow all localhost origins
-      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
-        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-          return callback(null, true);
-        }
-      }
-
-      // Allow all Netlify preview URLs
-      if (origin.includes("netlify.app")) {
-        return callback(null, true);
-      }
-
-      // Cho phép đường dẫn có đuôi là vercel.app
-      if (origin.includes("vercel.app")) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // Log blocked origins in development
-      if (process.env.NODE_ENV === "development") {
-        console.log("CORS blocked origin:", origin);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // các phương thức HTTP được phép
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cookie",
-      "X-Requested-With",
-    ],
-  }),
-);
-// Explicit preflight handler for all routes
-app.options(
-  "*",
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      // In development, allow all localhost origins
-      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
-        //
-        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-          return callback(null, true);
-        }
-      }
-
-      // Allow all Netlify preview URLs
-      if (origin.includes("netlify.app")) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    optionsSuccessStatus: 204,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // các phương thức HTTP được phép
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cookie",
-      "X-Requested-With",
-    ],
-  }),
-);
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use((req, res, next) => {
-  // Ensure Vary header for CORS
-  res.header("Vary", "Origin");
-  next();
-});
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("<h1>Hotel Booking Backend API is running 🚀</h1>");
-});
-
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/my-hotels", myHotelRoutes);
-app.use("/api/hotels", hotelRoutes);
-app.use("/api/my-bookings", bookingRoutes);
-app.use("/api/bookings", bookingsManagementRoutes);
-app.use("/api/health", healthRoutes);
-app.use("/api/business-insights", businessInsightsRoutes);
-
-// V2 APIs (New Features - Express)
-app.use("/api/v2/rooms", roomsRoutes);
-app.use("/api/v2/service-requests", serviceRequestsRoutes);
-app.use("/api/v2/booking-operations", bookingOperationsRoutes);
-app.use("/api/v2/promotions", promotionsRoutes);
-app.use("/api/v2/employees", employeesRoutes);
-
-// Payment APIs (PayOS)
-app.use("/api/payments", paymentRoutes);
-
-// Swagger API Documentation
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(specs, {
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Hotel Booking API Documentation",
-  }),
-);
-
-// OpenAPI JSON endpoints for tools (e.g., Postman) that accept OpenAPI/Swagger JSON
-app.get("/v3/api-docs", (req: Request, res: Response) => {
-  res.json(specs);
-});
-
-app.get("/api-docs.json", (req: Request, res: Response) => {
-  res.json(specs);
-});
-
-// Custom OpenAPI JSON (user-provided) and Swagger UI
-app.get("/openapi/custom.json", (req: Request, res: Response) => {
-  res.json(customOpenApi);
-});
-
-app.use(
-  "/openapi",
-  swaggerUi.serve,
-  // Use `null as any` so TypeScript accepts using `swaggerUrl` option
-  swaggerUi.setup(null as any, {
-    swaggerUrl: "/openapi/custom.json",
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Custom OpenAPI Documentation",
-  }),
-);
+const app = createApp({ enableCloudinary: process.env.NODE_ENV !== "test" });
 
 // Dynamic Port Configuration (for Render and local development)
 const PORT = process.env.PORT || 7002;
